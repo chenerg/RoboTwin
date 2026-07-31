@@ -114,6 +114,7 @@ class Base_Task(gym.Env):
         self.right_joint_path = kwags.get("right_joint_path", [])
         self.left_cnt = 0
         self.right_cnt = 0
+        self.subtask_id = 0
 
         self.instruction = None  # for Eval
 
@@ -442,6 +443,7 @@ class Base_Task(gym.Env):
             "pointcloud": [],
             "joint_action": {},
             "endpose": {},
+            "subtask": np.array(self.subtask_id, dtype=np.int32),
         }
 
         pkl_dic["observation"] = self.cameras.get_config()
@@ -966,6 +968,9 @@ class Base_Task(gym.Env):
             self.take_dense_action(control_seq)
 
         return True
+
+    def set_subtask(self, subtask_id: int):
+        self.subtask_id = int(subtask_id)
 
     def get_gripper_actor_contact_position(self, actor_name):
         contacts = self.scene.get_contacts()
