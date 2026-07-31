@@ -1,0 +1,24 @@
+{
+  "full_description": "place the red block on the red pad and the blue block on the blue pad",
+  "schema": "{A} denotes the red block, {B} denotes the red pad, {C} denotes the blue block, {D} denotes the blue pad, {a} denotes the arm used for the red block, and {b} denotes the arm used for the blue block",
+  "preference": "num of words should not exceed 20. Stress matching each block to the pad of the same color.",
+  "seen": [
+    "Use {a} to place {A} on {B}, then use {b} to place {C} on {D}.",
+    "Match {A} with {B} and {C} with {D}.",
+    "Put each block on the pad of the same color.",
+    "Move {A} onto {B}, and move {C} onto {D}.",
+    "Place the red block on the red pad and the blue block on the blue pad.",
+    "Use the appropriate arms to match both blocks with their colored pads.",
+    "Set {A} on {B} and {C} on {D}.",
+    "Sort both blocks onto their same-colored pads.",
+    "With {a}, move {A} to {B}; with {b}, move {C} to {D}.",
+    "Complete the color match by placing both blocks on their corresponding pads."
+  ],
+  "unseen": [
+    "Pair each block with the pad sharing its color.",
+    "Relocate the red and blue blocks to their matching pads.",
+    "Put {A} on {B} and {C} on {D}.",
+    "Move both blocks onto the corresponding color targets.",
+    "Match the colored blocks to the colored pads."
+  ]
+}
