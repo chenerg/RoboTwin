@@ -90,6 +90,18 @@ try:
             self.motion_gen_batch = MotionGen(motion_gen_config)
             self.motion_gen_batch.warmup(batch=CONFIGS.ROTATE_NUM)
 
+        @staticmethod
+        def _to_python_value(value):
+            """Convert CuRobo enums and CUDA tensors into printable values."""
+            if value is None:
+                return None
+            if hasattr(value, "value"):
+                return value.value
+            if torch.is_tensor(value):
+                value = value.detach().cpu()
+                return value.item() if value.numel() == 1 else value.tolist()
+            return value
+
         def plan_path(
             self,
             curr_joint_pos,
@@ -146,6 +158,37 @@ try:
             res_result = dict()
             if result.success.item() == False:
                 res_result["status"] = "Fail"
+                diagnostic_fields = (
+                    "status",
+                    "valid_query",
+                    "attempts",
+                    "trajopt_attempts",
+                    "used_graph",
+                    "solve_time",
+                    "ik_time",
+                    "graph_time",
+                    "trajopt_time",
+                    "finetune_time",
+                    "total_time",
+                    "position_error",
+                    "rotation_error",
+                    "cspace_error",
+                )
+                diagnostics = {
+                    field: self._to_python_value(getattr(result, field, None))
+                    for field in diagnostic_fields
+                }
+                diagnostics.update(
+                    {
+                        "arm": arms_tag,
+                        "start_joint_positions": joint_angles,
+                        "target_pose_in_base_frame": (
+                            list(target_pose_p) + list(target_pose_q)
+                        ),
+                    }
+                )
+                res_result["diagnostics"] = diagnostics
+                print(f"[CuroboPlanner] Planning failed: {diagnostics}")
                 return res_result
             else:
                 res_result["status"] = "Success"
