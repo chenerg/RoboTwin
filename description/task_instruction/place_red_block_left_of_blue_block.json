@@ -1,0 +1,13 @@
+{
+  "full_description": "place the red block to the left of the blue block",
+  "schema": "{A} is the red block, {B} is the blue reference block, and {a} is the arm used",
+  "preference": "Use at most 20 words and preserve the left-of relation.",
+  "seen": [
+    "Use {a} to place {A} left of {B}.",
+    "Put the red block on the blue block's left side.",
+    "Move {A} to the left of {B}.",
+    "Set {A} beside {B}, on its left.",
+    "Position the red block left of the blue block."
+  ],
+  "unseen": ["Relocate {A} to {B}'s left.", "Leave the red block just left of the blue one.", "Place {A} on the left side of {B}."]
+}

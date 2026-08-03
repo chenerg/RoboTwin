@@ -1,0 +1,13 @@
+{
+  "full_description": "place the red block in front of the blue block",
+  "schema": "{A} is the red block, {B} is the blue reference block, and {a} is the arm used",
+  "preference": "Use at most 20 words and preserve the in-front-of relation.",
+  "seen": [
+    "Use {a} to place {A} in front of {B}.",
+    "Put the red block ahead of the blue block.",
+    "Move {A} to the front of {B}.",
+    "Set {A} before {B}.",
+    "Position the red block in front of the blue block."
+  ],
+  "unseen": ["Relocate {A} ahead of {B}.", "Leave the red block just before the blue one.", "Place {A} on the front side of {B}."]
+}

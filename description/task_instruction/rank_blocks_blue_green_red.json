@@ -1,0 +1,13 @@
+{
+  "full_description": "arrange the blue, green, and red blocks from left to right",
+  "schema": "{A}, {B}, and {C} are the left, middle, and right blocks; {a}, {b}, and {c} are their arms",
+  "preference": "Use at most 20 words and preserve the left-to-right order.",
+  "seen": [
+    "Arrange {A}, {B}, and {C} from left to right.",
+    "Order the blocks blue, green, then red.",
+    "Make a row with {A} left, {B} center, and {C} right.",
+    "Rank the three blocks blue-to-green-to-red.",
+    "Place blue leftmost, green in the middle, and red rightmost."
+  ],
+  "unseen": ["Line up {A}, {B}, then {C}.", "Sort the blocks from blue to red through green.", "Form the requested blue-green-red row."]
+}

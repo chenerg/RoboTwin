@@ -1,0 +1,13 @@
+{
+  "full_description": "stack the blue block on the red block",
+  "schema": "{A} is the blue top block, {B} is the red bottom block, {a} handles the top, and {b} handles the bottom",
+  "preference": "Use at most 20 words and state which block goes on top.",
+  "seen": [
+    "Use {b} to set {B} down, then stack {A} on it with {a}.",
+    "Stack the blue block on the red block.",
+    "Place {A} directly on top of {B}.",
+    "Make a two-block tower with {B} below {A}.",
+    "Put the red block under the blue block."
+  ],
+  "unseen": ["Pile {A} onto {B}.", "Build a tower with blue above red.", "Set {A} on top of {B}."]
+}

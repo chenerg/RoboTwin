@@ -1,0 +1,17 @@
+{
+  "full_description": "place the red block on the blue pad and the blue block on the red pad",
+  "schema": "{A} and {C} are blocks, {B} and {D} are their opposite-color pads, and {a}/{b} are the arms",
+  "preference": "Use at most 20 words and stress the crossed color mapping.",
+  "seen": [
+    "Use {a} to put {A} on {B}, then use {b} for {C} on {D}.",
+    "Place each block on the opposite-color pad.",
+    "Move red to blue and blue to red.",
+    "Set {A} on {B} and {C} on {D}.",
+    "Cross-match the red and blue blocks with the pads."
+  ],
+  "unseen": [
+    "Place {A} on {B} and {C} on {D}.",
+    "Pair {A} with {B}, and pair {C} with {D}.",
+    "Use {a} for {A} on {B} and {b} for {C} on {D}."
+  ]
+}

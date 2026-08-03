@@ -1,0 +1,13 @@
+{
+  "full_description": "arrange the yellow, orange, and red blocks from left to right",
+  "schema": "{A}, {B}, and {C} are the left, middle, and right blocks; {a}, {b}, and {c} are their arms",
+  "preference": "Use at most 20 words and preserve the left-to-right order.",
+  "seen": [
+    "Arrange {A}, {B}, and {C} from left to right.",
+    "Order the blocks yellow, orange, then red.",
+    "Make a row with {A} left, {B} center, and {C} right.",
+    "Rank the three blocks yellow-to-orange-to-red.",
+    "Place yellow leftmost, orange in the middle, and red rightmost."
+  ],
+  "unseen": ["Line up {A}, {B}, then {C}.", "Sort the blocks from yellow to red through orange.", "Form the requested yellow-orange-red row."]
+}

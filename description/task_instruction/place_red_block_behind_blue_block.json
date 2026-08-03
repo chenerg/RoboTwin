@@ -1,0 +1,13 @@
+{
+  "full_description": "place the red block behind the blue block",
+  "schema": "{A} is the red block, {B} is the blue reference block, and {a} is the arm used",
+  "preference": "Use at most 20 words and preserve the behind relation.",
+  "seen": [
+    "Use {a} to place {A} behind {B}.",
+    "Put the red block behind the blue block.",
+    "Move {A} to the back of {B}.",
+    "Set {A} beyond {B}.",
+    "Position the red block behind the blue block."
+  ],
+  "unseen": ["Relocate {A} behind {B}.", "Leave the red block just past the blue one.", "Place {A} on the back side of {B}."]
+}

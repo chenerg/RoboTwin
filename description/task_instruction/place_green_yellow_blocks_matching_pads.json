@@ -1,0 +1,17 @@
+{
+  "full_description": "place the green and yellow blocks on their matching pads",
+  "schema": "{A} and {C} are blocks, {B} and {D} are same-color pads, and {a}/{b} are the arms",
+  "preference": "Use at most 20 words and stress matching colors.",
+  "seen": [
+    "Use {a} to put {A} on {B}, then use {b} for {C} on {D}.",
+    "Place each block on its same-color pad.",
+    "Move green to green and yellow to yellow.",
+    "Set {A} on {B} and {C} on {D}.",
+    "Match the green and yellow blocks with their pads."
+  ],
+  "unseen": [
+    "Place {A} on {B} and {C} on {D}.",
+    "Pair {A} with {B}, and pair {C} with {D}.",
+    "Use {a} for {A} on {B} and {b} for {C} on {D}."
+  ]
+}

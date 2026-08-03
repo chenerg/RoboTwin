@@ -1,0 +1,13 @@
+{
+  "full_description": "place the red block on the blue pad",
+  "schema": "{A} is the red block, {B} is the blue pad, and {a} is the arm used",
+  "preference": "Use at most 20 words and clearly distinguish the block from the pad.",
+  "seen": [
+    "Use {a} to place {A} on {B}.",
+    "Put the red block onto the blue pad.",
+    "Move {A} to {B}.",
+    "Set {A} down on {B}.",
+    "Place the red object on the blue target."
+  ],
+  "unseen": ["Relocate {A} onto {B}.", "Rest the red block on the blue pad.", "Transfer {A} to {B}."]
+}
