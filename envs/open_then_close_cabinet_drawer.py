@@ -23,7 +23,9 @@ class open_then_close_cabinet_drawer(Base_Task):
             fix_root_link=True,
         )
         limit = self.cabinet.get_qlimits()[0]
-        self.cabinet.set_qpos([limit[0] + (limit[1] - limit[0]) * 0.05])
+        qpos = np.asarray(self.cabinet.get_qpos(), dtype=np.float64).copy()
+        qpos[0] = limit[0] + (limit[1] - limit[0]) * 0.05
+        self.cabinet.set_qpos(qpos)
         self.cabinet.set_mass(0.01)
         self.cabinet.set_properties(1, 0)
         self.arm_tag = ArmTag("right")
