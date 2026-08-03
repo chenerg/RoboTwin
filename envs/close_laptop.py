@@ -33,15 +33,24 @@ class close_laptop(Base_Task):
         face_prod = get_face_prod(self.laptop.get_pose().q, [1, 0, 0], [1, 0, 0])
         self.arm_tag = ArmTag("left" if face_prod > 0 else "right")
         self.set_subtask(0)
+        self.info["info"] = {
+            "{A}": f"{self.model_name}/base{self.model_id}",
+            "{a}": str(self.arm_tag),
+        }
 
+        # Reverse open_laptop's proven CP0 -> CP1 trajectory: grasp the
+        # opened screen at CP1, then progressively move it toward CP0.
         self.move(
             self.grasp_actor(
                 self.laptop,
                 arm_tag=self.arm_tag,
                 pre_grasp_dis=0.08,
-                contact_point_id=3,
+                contact_point_id=1,
             )
         )
+        if not self.plan_success:
+            return self.info
+
         for _ in range(8):
             self.move(
                 self.grasp_actor(
@@ -55,12 +64,9 @@ class close_laptop(Base_Task):
             if not self.plan_success or self._closed_fraction() <= 0.25:
                 break
 
-        self.move(self.open_gripper(self.arm_tag))
-        self.move(self.back_to_origin(self.arm_tag))
-        self.info["info"] = {
-            "{A}": f"{self.model_name}/base{self.model_id}",
-            "{a}": str(self.arm_tag),
-        }
+        if self.plan_success:
+            self.move(self.open_gripper(self.arm_tag))
+            self.move(self.back_to_origin(self.arm_tag))
         return self.info
 
     def _closed_fraction(self):

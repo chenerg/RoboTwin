@@ -1205,6 +1205,11 @@ class Base_Task(gym.Env):
             target_dis=grasp_dis,
             contact_point_id=contact_point_id,
         )
+        if pre_grasp_pose is None or grasp_pose is None:
+            # No collision-free grasp pose was found. Treat this as a normal
+            # planning failure instead of constructing Action(target_pose=None).
+            self.plan_success = False
+            return arm_tag, []
         if pre_grasp_pose == grasp_pose:
             return arm_tag, [
                 Action(arm_tag, "move", target_pose=pre_grasp_pose),
