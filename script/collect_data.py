@@ -19,6 +19,14 @@ current_file_path = os.path.abspath(__file__)
 parent_directory = os.path.dirname(current_file_path)
 
 
+def print_episode_failure(episode_idx, seed, reason, error=None):
+    print(" -------------")
+    print(f"[{reason}] simulate data episode {episode_idx} fail! (seed = {seed})")
+    if error is not None:
+        print(f"Error ({type(error).__name__}): {error}")
+    print(" -------------")
+
+
 def class_decorator(task_name):
     envs_module = importlib.import_module(f"envs.{task_name}")
     try:
@@ -125,28 +133,37 @@ def run(TASK_ENV, args):
             print(f"Exist seed file, Start from: {epid} / {suc_num}")
 
         while suc_num < args["episode_num"]:
+            stage = "setup"
             try:
                 TASK_ENV.setup_demo(now_ep_num=suc_num, seed=epid, **args)
+
+                stage = "play_once"
                 TASK_ENV.play_once()
 
-                if TASK_ENV.plan_success and TASK_ENV.check_success():
-                    print(f"simulate data episode {suc_num} success! (seed = {epid})")
-                    seed_list.append(epid)
-                    TASK_ENV.save_traj_data(suc_num)
-                    suc_num += 1
-                else:
-                    print(f"simulate data episode {suc_num} fail! (seed = {epid})")
+                if not TASK_ENV.plan_success:
+                    print_episode_failure(suc_num, epid, "PLAN_FAIL")
                     fail_num += 1
+                else:
+                    stage = "check_success"
+                    task_success = TASK_ENV.check_success()
+                    if not task_success:
+                        print_episode_failure(suc_num, epid, "TASK_SUCCESS_CHECK_FAIL")
+                        fail_num += 1
+                    else:
+                        stage = "save_trajectory"
+                        TASK_ENV.save_traj_data(suc_num)
+                        print(f"simulate data episode {suc_num} success! (seed = {epid})")
+                        seed_list.append(epid)
+                        suc_num += 1
 
+                stage = "close_env"
                 TASK_ENV.close_env()
 
                 if args["render_freq"]:
+                    stage = "close_viewer"
                     TASK_ENV.viewer.close()
             except UnStableError as e:
-                print(" -------------")
-                print(f"simulate data episode {suc_num} fail! (seed = {epid})")
-                print("Error: ", e)
-                print(" -------------")
+                print_episode_failure(suc_num, epid, "SETUP_STABILITY_FAIL", e)
                 fail_num += 1
                 TASK_ENV.close_env()
 
@@ -154,11 +171,9 @@ def run(TASK_ENV, args):
                     TASK_ENV.viewer.close()
                 time.sleep(0.3)
             except Exception as e:
-                # stack_trace = traceback.format_exc()
-                print(" -------------")
-                print(f"simulate data episode {suc_num} fail! (seed = {epid})")
-                print("Error: ", e)
-                print(" -------------")
+                reason = f"{stage.upper()}_EXCEPTION"
+                print_episode_failure(suc_num, epid, reason, e)
+                traceback.print_exc()
                 fail_num += 1
                 TASK_ENV.close_env()
 
@@ -201,33 +216,64 @@ def run(TASK_ENV, args):
 
         for episode_idx in range(st_idx, args["episode_num"]):
             print(f"\033[34mTask name: {args['task_name']}\033[0m")
+            episode_seed = seed_list[episode_idx]
+            stage = "setup"
 
-            TASK_ENV.setup_demo(now_ep_num=episode_idx, seed=seed_list[episode_idx], **args)
+            try:
+                TASK_ENV.setup_demo(now_ep_num=episode_idx, seed=episode_seed, **args)
 
-            traj_data = TASK_ENV.load_tran_data(episode_idx)
-            args["left_joint_path"] = traj_data["left_joint_path"]
-            args["right_joint_path"] = traj_data["right_joint_path"]
-            TASK_ENV.set_path_lst(args)
+                stage = "load_trajectory"
+                traj_data = TASK_ENV.load_tran_data(episode_idx)
+                args["left_joint_path"] = traj_data["left_joint_path"]
+                args["right_joint_path"] = traj_data["right_joint_path"]
+                TASK_ENV.set_path_lst(args)
 
-            info_file_path = os.path.join(args["save_path"], "scene_info.json")
+                stage = "prepare_scene_info"
+                info_file_path = os.path.join(args["save_path"], "scene_info.json")
 
-            if not os.path.exists(info_file_path):
+                if not os.path.exists(info_file_path):
+                    with open(info_file_path, "w", encoding="utf-8") as file:
+                        json.dump({}, file, ensure_ascii=False)
+
+                with open(info_file_path, "r", encoding="utf-8") as file:
+                    info_db = json.load(file)
+
+                stage = "play_once"
+                info = TASK_ENV.play_once()
+                if not TASK_ENV.plan_success:
+                    stage = "plan"
+                    raise RuntimeError("Stored trajectory replay reported plan_success=False")
+                info_db[f"episode_{episode_idx}"] = info
+
+                stage = "save_scene_info"
                 with open(info_file_path, "w", encoding="utf-8") as file:
-                    json.dump({}, file, ensure_ascii=False)
+                    json.dump(info_db, file, ensure_ascii=False, indent=4)
 
-            with open(info_file_path, "r", encoding="utf-8") as file:
-                info_db = json.load(file)
+                stage = "close_env"
+                TASK_ENV.close_env(clear_cache=((episode_idx + 1) % clear_cache_freq == 0))
 
-            info = TASK_ENV.play_once()
-            info_db[f"episode_{episode_idx}"] = info
+                stage = "merge_data"
+                TASK_ENV.merge_pkl_to_hdf5_video()
 
-            with open(info_file_path, "w", encoding="utf-8") as file:
-                json.dump(info_db, file, ensure_ascii=False, indent=4)
+                stage = "remove_data_cache"
+                TASK_ENV.remove_data_cache()
 
-            TASK_ENV.close_env(clear_cache=((episode_idx + 1) % clear_cache_freq == 0))
-            TASK_ENV.merge_pkl_to_hdf5_video()
-            TASK_ENV.remove_data_cache()
-            assert TASK_ENV.check_success(), "Collect Error"
+                stage = "check_success"
+                if not TASK_ENV.check_success():
+                    raise AssertionError("Collect Error")
+            except UnStableError as e:
+                print_episode_failure(episode_idx, episode_seed, "SETUP_STABILITY_FAIL", e)
+                raise
+            except Exception as e:
+                if stage == "plan":
+                    reason = "PLAN_FAIL"
+                elif stage == "check_success" and isinstance(e, AssertionError):
+                    reason = "TASK_SUCCESS_CHECK_FAIL"
+                else:
+                    reason = f"{stage.upper()}_EXCEPTION"
+                print_episode_failure(episode_idx, episode_seed, reason, e)
+                traceback.print_exc()
+                raise
 
         command = f"cd description && bash gen_episode_instructions.sh {args['task_name']} {args['task_config']} {args['language_num']}"
         os.system(command)
