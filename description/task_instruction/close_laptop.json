@@ -1,0 +1,13 @@
+{
+  "full_description": "close the laptop",
+  "schema": "{A} is the laptop and {a} is the arm used to close it",
+  "preference": "Use at most 20 words and make closing, not opening, explicit.",
+  "seen": [
+    "Use {a} to close {A}.",
+    "Fold the screen of {A} down with {a}.",
+    "Shut {A} using {a}.",
+    "Lower the screen until {A} is closed.",
+    "Use {a} to fold {A} shut."
+  ],
+  "unseen": ["Close {A} with {a}.", "Bring the screen of {A} down.", "Fold {A} into its closed position."]
+}

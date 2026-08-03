@@ -1,0 +1,13 @@
+{
+  "full_description": "strike the gong with the wooden mallet",
+  "schema": "{A} is the wooden mallet, {B} is the gong, and {a} is the arm used",
+  "preference": "Use at most 20 words and state that the mallet must contact the gong.",
+  "seen": [
+    "Use {a} to strike {B} with {A}.",
+    "Hit {B} once using {A}.",
+    "Grasp {A} and tap the center of {B}.",
+    "Swing {A} into {B} with {a}.",
+    "Make {A} contact the center of {B}."
+  ],
+  "unseen": ["Ring {B} using {A}.", "Tap {B} with {A}.", "Use {a} to bring {A} against {B}."]
+}

@@ -1,0 +1,13 @@
+{
+  "full_description": "place the object on the scale and then move it to the blue pad",
+  "schema": "{A} is the object, {B} is the scale, {C} is the final pad, and {a} is the arm used",
+  "preference": "Use at most 20 words and preserve the scale-then-pad order.",
+  "seen": [
+    "Use {a} to place {A} on {B}, then move it to {C}.",
+    "Weigh {A} on {B} before setting it on {C}.",
+    "Put {A} on {B} first and on {C} second.",
+    "Move {A} to {B}, then transfer it to {C}.",
+    "Complete the two-stage move of {A} from {B} to {C}."
+  ],
+  "unseen": ["Set {A} on {B} before relocating it to {C}.", "Weigh and remove {A} from {B} onto {C}.", "Use {a} for {A}: {B} first, {C} last."]
+}

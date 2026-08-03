@@ -1,0 +1,13 @@
+{
+  "full_description": "handover the dumbbell from one arm to the other",
+  "schema": "{A} is the dumbbell, {a} is the giving arm, and {b} is the receiving arm",
+  "preference": "Use at most 20 words and preserve the giver-to-receiver direction.",
+  "seen": [
+    "Transfer {A} from {a} to {b}.",
+    "Use {a} to pass {A} to {b}.",
+    "Have {b} receive {A} from {a}.",
+    "Handover {A}, releasing {a} after {b} grasps it.",
+    "Pass the dumbbell {A} between the two arms."
+  ],
+  "unseen": ["Give {A} from {a} to {b}.", "Move {A} into {b}'s grasp.", "Complete an arm-to-arm transfer of {A}."]
+}

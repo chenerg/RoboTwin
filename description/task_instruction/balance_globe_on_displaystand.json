@@ -1,0 +1,13 @@
+{
+  "full_description": "balance the globe upright on the display stand",
+  "schema": "{A} is the globe, {B} is the display stand, and {a} is the arm used",
+  "preference": "Use at most 20 words and require an upright final orientation.",
+  "seen": [
+    "Use {a} to balance {A} upright on {B}.",
+    "Place {A} vertically on top of {B}.",
+    "Set {A} on {B} without tipping it.",
+    "Center the upright {A} on {B}.",
+    "Put {A} securely onto {B} using {a}."
+  ],
+  "unseen": ["Stand {A} upright on {B}.", "Balance {A} over the center of {B}.", "Use {a} to set {A} upright on {B}."]
+}

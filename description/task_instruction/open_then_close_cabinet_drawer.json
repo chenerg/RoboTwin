@@ -1,0 +1,13 @@
+{
+  "full_description": "open the cabinet drawer and then close it",
+  "schema": "{A} is the cabinet and {a} is the arm used for both drawer stages",
+  "preference": "Use at most 20 words and preserve the open-then-close order.",
+  "seen": [
+    "Use {a} to open the drawer of {A}, then close it.",
+    "Pull out {A}'s drawer and push it shut with {a}.",
+    "Open and then close the drawer on {A}.",
+    "With {a}, slide {A}'s drawer out and back in.",
+    "Cycle the drawer of {A} from closed to open and closed again."
+  ],
+  "unseen": ["Open {A}'s drawer before shutting it.", "Use {a} to pull and return the drawer of {A}.", "Extend and retract {A}'s drawer."]
+}

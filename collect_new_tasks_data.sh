@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Collect demonstrations for the 30 newly proposed RoboTwin tasks.
+# Collect demonstrations for the 30 implemented RoboTwin tasks added in this batch.
 # collect_data.py already resumes seed search and HDF5 replay, so rerunning this
 # script safely continues each task from its existing output directory.
 
@@ -111,7 +111,7 @@ tasks=(
     place_green_yellow_blocks_matching_pads
     place_orange_purple_blocks_opposite_pads
 
-    # Proposed heterogeneous tasks. Their policies must exist before collection.
+    # Implemented heterogeneous manipulation tasks.
     close_laptop
     open_then_close_cabinet_drawer
     insert_markpen_into_pencup

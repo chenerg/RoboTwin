@@ -1,0 +1,13 @@
+{
+  "full_description": "wipe across the mini chalkboard with the eraser",
+  "schema": "{A} is the eraser, {B} is the mini chalkboard, and {a} is the arm used",
+  "preference": "Use at most 20 words and request a left-to-right wiping motion.",
+  "seen": [
+    "Use {a} to wipe {B} with {A}.",
+    "Move {A} across the surface of {B}.",
+    "Wipe the left, center, and right parts of {B} using {A}.",
+    "Keep {A} against {B} while wiping across it.",
+    "Sweep {A} from side to side on {B}."
+  ],
+  "unseen": ["Rub {A} across {B}.", "Use {a} to erase across {B} with {A}.", "Cover the width of {B} using {A}."]
+}

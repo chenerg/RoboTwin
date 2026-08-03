@@ -1,0 +1,13 @@
+{
+  "full_description": "pour all beads from the source bowl into the target bowl",
+  "schema": "{A} is the source bowl, {B} is the target bowl, and {a} is the arm used",
+  "preference": "Use at most 20 words and distinguish from merely moving the bowl.",
+  "seen": [
+    "Use {a} to pour every bead from {A} into {B}.",
+    "Tip {A} above {B} until all beads transfer.",
+    "Empty the beads in {A} into {B}.",
+    "Lift and tilt {A} so its beads fall into {B}.",
+    "Transfer all beads from {A} to {B} by pouring."
+  ],
+  "unseen": ["Pour the contents of {A} into {B}.", "Empty {A} into {B} using {a}.", "Tip all beads from {A} into {B}."]
+}

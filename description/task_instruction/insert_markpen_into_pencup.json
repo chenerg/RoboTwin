@@ -1,0 +1,13 @@
+{
+  "full_description": "insert the marker pen upright into the pen cup",
+  "schema": "{A} is the marker pen, {B} is the pen cup, and {a} is the arm used",
+  "preference": "Use at most 20 words and express insertion into, not placement on.",
+  "seen": [
+    "Use {a} to insert {A} upright into {B}.",
+    "Put {A} vertically inside {B}.",
+    "Place {A} into {B} with its long axis upright.",
+    "Insert the marker {A} into the cup {B}.",
+    "Use {a} to stand {A} inside {B}."
+  ],
+  "unseen": ["Slide {A} down into {B}.", "Store {A} upright in {B}.", "Put {A} inside {B} using {a}."]
+}

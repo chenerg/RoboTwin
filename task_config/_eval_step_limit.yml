@@ -69,3 +69,13 @@ rank_blocks_yellow_orange_red: 1200
 place_red_blue_blocks_opposite_pads: 800
 place_green_yellow_blocks_matching_pads: 800
 place_orange_purple_blocks_opposite_pads: 800
+close_laptop: 700
+open_then_close_cabinet_drawer: 900
+insert_markpen_into_pencup: 700
+strike_gong_with_mallet: 500
+wipe_mini_chalkboard: 800
+pour_beads_between_bowls: 900
+push_toycar_to_parking_zone: 600
+handover_dumbbell: 700
+balance_globe_on_displaystand: 700
+weigh_then_remove_object: 800

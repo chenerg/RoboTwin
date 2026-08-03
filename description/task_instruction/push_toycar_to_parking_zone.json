@@ -1,0 +1,13 @@
+{
+  "full_description": "push the toy car into the blue parking zone without grasping it",
+  "schema": "{A} is the toy car, {B} is the parking zone, and {a} is the pushing arm",
+  "preference": "Use at most 20 words and make pushing without grasping explicit.",
+  "seen": [
+    "Use {a} to push {A} into {B}.",
+    "Move {A} into {B} by pushing from behind.",
+    "Without grasping, push {A} onto {B}.",
+    "Guide {A} into {B} using {a} as a pusher.",
+    "Push the toy car {A} fully inside {B}."
+  ],
+  "unseen": ["Nudge {A} into {B}.", "Park {A} in {B} using {a}.", "Push, rather than pick, {A} onto {B}."]
+}
