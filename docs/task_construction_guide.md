@@ -1,6 +1,6 @@
 # RoboTwin Task 构造规则、依赖条件与现有任务索引
 
-本文档基于当前仓库中的 81 个 `envs/*.py` task、81 个语言模板和 81 项评测步数配置整理。它描述的是当前代码实际采用的约定，而不是一个与实现无关的抽象接口。第 9 章集中介绍最近添加的 30 个任务。
+本文档基于当前仓库中的 82 个 `envs/*.py` task、82 个语言模板和 82 项评测步数配置整理。它描述的是当前代码实际采用的约定，而不是一个与实现无关的抽象接口。第 9 章集中介绍最近添加的 31 个任务。
 
 ## 1. 总体结构
 
@@ -15,9 +15,9 @@
 
 当前一共有：
 
-- 81 个 task Python 文件；
-- 81 个 task instruction JSON；
-- 81 个评测步数配置；
+- 82 个 task Python 文件；
+- 82 个 task instruction JSON；
+- 82 个评测步数配置；
 - 120 类编号资产，其中 59 类被 task 显式引用。
 
 ### 1.1 生命周期
@@ -411,14 +411,14 @@ class my_new_task(Base_Task):
 | `put_object_cabinet` | `036_cabinet` U CP/FP/J；随机 source R CP | 一只手打开抽屉，另一只手抓 source、抬升并放入抽屉 FP | source 在抽屉目标 XY 附近、高度变化位于范围内、操作手释放 | 700 |
 | `scan_object` | `024_scanner` R CP/FP0；`112_tea-box` R CP/FP；双臂 | 两臂分别抓 scanner 和 object，抬升后调整，使 scanner 功能轴指向 object | object 落在 scanner FP0 射线前方 0–7 cm 内，双夹爪闭合 | 500 |
 
-## 9. 新添加 30 个 Task 介绍
+## 9. 新添加 31 个 Task 介绍
 
-这一批 30 个任务均已具备同名 policy、instruction JSON 和评测步数配置，仓库可动态导入。它们使可运行 task 总数从 51 增加到 81，并分成两类实现形式：
+这一批 31 个任务均已具备同名 policy、instruction JSON 和评测步数配置，仓库可动态导入。它们使可运行 task 总数从 51 增加到 82，并分成两类实现形式：
 
 - **程序生成任务 20 个**：通过共享 primitive policy 实现跨色放置、相对方位、堆叠、排序和双目标映射。
-- **异构任务 10 个**：直接使用刚体、URDF 关节、程序生成 sphere 和接触状态，覆盖关节循环、插入、工具使用、擦拭、倾倒、推动、handover、姿态放置和时序操作。
+- **异构任务 11 个**：直接使用刚体、URDF 关节、程序生成 sphere 和接触状态，覆盖关节循环、插入、工具使用、擦拭、倾倒、推动、handover、姿态放置和时序操作。
 
-批量脚本 [`collect_new_tasks_data.sh`](../collect_new_tasks_data.sh) 保存这 30 个名称，并在启动前验证所有任务的 policy、同名类、instruction JSON 和评测步数配置。
+批量脚本 [`collect_new_tasks_data.sh`](../collect_new_tasks_data.sh) 保存这 31 个名称，并在启动前验证所有任务的 policy、同名类、instruction JSON 和评测步数配置。
 
 ### 9.1 共享 primitive policy
 
@@ -432,7 +432,7 @@ class my_new_task(Base_Task):
 | `RankBlocksPolicy` | 将三块 block 按指定颜色顺序排列成一行 | 3 |
 | `PlaceBlocksOnPadsPolicy` | 将两块 block 顺序放到匹配或交叉颜色 pad | 3 |
 
-`_primitive_task_policy.py` 是内部辅助模块，不是独立 task，因此没有同名 instruction JSON 和评测步数配置，也不计入 81 个 task。它集中实现：
+`_primitive_task_policy.py` 是内部辅助模块，不是独立 task，因此没有同名 instruction JSON 和评测步数配置，也不计入 82 个 task。它集中实现：
 
 - 七种 block/pad 颜色和程序生成几何体；
 - 最多 200 次的拒绝采样、中央死区规避和 12 cm 最小间距；
@@ -509,13 +509,14 @@ class place_blue_block_green_pad(PlaceBlockOnPadPolicy):
 | `place_green_yellow_blocks_matching_pads` | 绿 block → 绿 pad；黄 block → 黄 pad | 同上 | 800 |
 | `place_orange_purple_blocks_opposite_pads` | 橙 block → 紫 pad；紫 block → 橙 pad | 同上 | 800 |
 
-### 9.7 已实现：10 个异构任务
+### 9.7 已实现：11 个异构任务
 
 下列任务均已加入 `envs/`、`description/task_instruction/`、`_eval_step_limit.yml` 和批量采集清单。与前 20 个程序生成任务不同，它们分别实现独立 policy，以便处理不同资产结构和阶段状态。
 
 | Task | 类型与资产依赖 | 专家动作 | 成功判定 | 步数 |
 |---|---|---|---|---:|
 | `close_laptop` | 关节关闭；`015_laptop` U CP/J | 从 70%–90% 打开状态抓屏幕 CP，沿关节轨迹合盖并释放 | `qpos` 回到行程下段，屏幕接近闭合且夹爪打开 | 700 |
+| `close_push_laptop` | 顶部推动关闭；`015_laptop` U CP/J | 将夹爪收成推杆，从屏幕 CP0 上方接近，并沿递减铰链位置向下推动 | 铰链相对完全闭合位置的夹角严格小于 5°，且双夹爪打开 | 700 |
 | `open_then_close_cabinet_drawer` | 多阶段关节；`036_cabinet` U CP/FP/J | `subtask=0` 拉开抽屉，记录打开事件；`subtask=1` 推回关闭 | stage tag 证明曾达到打开阈值，最终 `qpos` 回到下限 | 900 |
 | `insert_markpen_into_pencup` | 精细插入；`058_markpen` R CP/FP、`059_pencup` R | 抓 marker、旋成竖直姿态，从笔筒上方插入并释放 | marker XY 位于筒内、局部轴竖直、底端高度合理并接触笔筒 | 700 |
 | `strike_gong_with_mallet` | 工具接触；`084_woodenmallet` R CP/FP、`085_gong` R FP/C | 抓木槌并抬升，使槌头 FP 沿法向敲击 gong FP 后撤回 | 槌头 FP 进入目标邻域且产生真实 mallet–gong 接触；stage tag 保留事件 | 500 |
@@ -526,7 +527,7 @@ class place_blue_block_green_pad(PlaceBlockOnPadPolicy):
 | `balance_globe_on_displaystand` | 姿态约束放置；`089_globe` R CP/Q、`074_displaystand` R FP0 | 抓 globe，调整竖直轴，将底座对齐 stand FP0 后释放 | globe 与 stand 中心对齐、局部竖直轴朝上、稳定落在 stand 且夹爪打开 | 700 |
 | `weigh_then_remove_object` | 时序放置；随机 source R CP、`072_electronicscale` R FP0、pad P | `subtask=0` 将物体放到秤面并记录稳定接触；`subtask=1` 再搬到 pad | stage tag 证明物体曾在秤上，最终物体位于 pad 且双夹爪打开 | 800 |
 
-这 10 个任务已经按当前资产标注实现，但在多 seed 物理验收中仍需重点关注：
+这 11 个任务已经按当前资产标注实现，但在多 seed 物理验收中仍需重点关注：
 
 - `insert_markpen_into_pencup` 的目标深度不能只依赖 pencup 根 pose，应根据实际筒口尺寸构造接受区域；
 - `wipe_mini_chalkboard` 没有真实可擦除材质状态，只能用接触轨迹作为代理目标；
@@ -534,7 +535,7 @@ class place_blue_block_green_pad(PlaceBlockOnPadPolicy):
 - `push_toycar_to_parking_zone` 必须证明发生推动接触，不能只检查最终位置；
 - `weigh_then_remove_object` 的最终状态不在秤上，必须用阶段记忆保留“曾完成称重”。
 
-### 9.8 批量采集 30 个任务
+### 9.8 批量采集 31 个任务
 
 批量入口为：
 
@@ -542,7 +543,7 @@ class place_blue_block_green_pad(PlaceBlockOnPadPolicy):
 bash collect_new_tasks_data.sh <task_config> <gpu_id> [options]
 ```
 
-采集全部 30 个新任务：
+采集全部 31 个新任务：
 
 ```bash
 bash collect_new_tasks_data.sh demo_clean 0
@@ -556,7 +557,7 @@ bash collect_new_tasks_data.sh demo_clean 0 --dry-run
 
 可选 `--continue-on-error` 让单个 task 失败后继续处理后续任务；`--skip-missing` 保留为开发期间临时跳过不完整任务的选项。脚本启动前会验证每个 task 是否同时具有 policy、同名类、instruction JSON 和 eval step limit。底层 `collect_data.py` 会读取已有 `seed.txt` 和连续的 `episode<N>.hdf5`，所以重新执行同一命令可以从已有结果续跑。
 
-当前 30 个新任务已经通过 Python 语法、JSON 解析、动态命名契约、配置唯一性和 instruction 过滤兼容性静态检查；仍需在正式 SAPIEN/GPU 环境下用多个 seed 完成专家规划与轨迹重放验收。
+当前 31 个新任务已经通过 Python 语法、JSON 解析、动态命名契约、配置唯一性和 instruction 过滤兼容性静态检查；仍需在正式 SAPIEN/GPU 环境下用多个 seed 完成专家规划与轨迹重放验收。
 
 ## 10. 维护建议
 

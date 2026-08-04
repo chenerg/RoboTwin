@@ -70,6 +70,7 @@ place_red_blue_blocks_opposite_pads: 800
 place_green_yellow_blocks_matching_pads: 800
 place_orange_purple_blocks_opposite_pads: 800
 close_laptop: 700
+close_push_laptop: 700
 open_then_close_cabinet_drawer: 900
 insert_markpen_into_pencup: 700
 strike_gong_with_mallet: 500

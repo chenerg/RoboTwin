@@ -1,0 +1,17 @@
+{
+  "full_description": "push the laptop screen down to close it",
+  "schema": "{A} is the laptop and {a} is the arm used to push it closed",
+  "preference": "Use at most 20 words and make top-down pushing, not grasping or opening, explicit.",
+  "seen": [
+    "Use {a} to push the screen of {A} down until it closes.",
+    "Close {A} by pressing its screen downward with {a}.",
+    "Use {a} to push {A} shut from above.",
+    "Press the screen of {A} down with {a} to close it.",
+    "Push down on {A} with {a} until the laptop is closed."
+  ],
+  "unseen": [
+    "Push the screen of {A} downward with {a}.",
+    "Press {A} shut from above.",
+    "Use {a} to close {A} with a downward push."
+  ]
+}
