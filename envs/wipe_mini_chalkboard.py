@@ -35,9 +35,17 @@ class wipe_mini_chalkboard(Base_Task):
 
     def play_once(self):
         self.set_subtask(0)
-        self.move(self.grasp_actor(self.eraser, arm_tag=self.arm_tag, pre_grasp_dis=0.09))
-        self.move(
-            self.place_actor(
+        self.run_action_stage(
+            "grasp_eraser",
+            lambda: self.grasp_actor(
+                self.eraser,
+                arm_tag=self.arm_tag,
+                pre_grasp_dis=0.09,
+            ),
+        )
+        self.run_action_stage(
+            "move_eraser_to_board",
+            lambda: self.place_actor(
                 self.eraser,
                 arm_tag=self.arm_tag,
                 target_pose=self.chalkboard.get_functional_point(0),
@@ -49,11 +57,20 @@ class wipe_mini_chalkboard(Base_Task):
                 constrain="align",
             )
         )
-        self.move(self.move_by_displacement(self.arm_tag, x=-0.045))
+        self.run_action_stage(
+            "wipe_to_left",
+            lambda: self.move_by_displacement(self.arm_tag, x=-0.045),
+        )
         self.check_success()
-        self.move(self.move_by_displacement(self.arm_tag, x=0.09))
+        self.run_action_stage(
+            "wipe_to_right",
+            lambda: self.move_by_displacement(self.arm_tag, x=0.09),
+        )
         self.check_success()
-        self.move(self.move_by_displacement(self.arm_tag, x=-0.045))
+        self.run_action_stage(
+            "wipe_back_to_center",
+            lambda: self.move_by_displacement(self.arm_tag, x=-0.045),
+        )
         self.check_success()
         self.info["info"] = {
             "{A}": "117_whiteboard-eraser/base0",

@@ -42,12 +42,27 @@ class push_toycar_to_parking_zone(Base_Task):
         target_p = self.parking_pad.get_pose().p
         push_end = [target_p[0], target_p[1] + 0.045, car_p[2] + 0.045] + GRASP_DIRECTION_DIC["front"]
 
-        self.move(self.move_to_pose(self.arm_tag, pre_push))
-        self.move(self.close_gripper(self.arm_tag, pos=0.3))
-        self.move(self.move_to_pose(self.arm_tag, push_end))
+        self.run_action_stage(
+            "move_behind_toycar",
+            lambda: self.move_to_pose(self.arm_tag, pre_push),
+        )
+        self.run_action_stage(
+            "set_gripper_for_push",
+            lambda: self.close_gripper(self.arm_tag, pos=0.3),
+        )
+        self.run_action_stage(
+            "push_toycar_to_parking_zone",
+            lambda: self.move_to_pose(self.arm_tag, push_end),
+        )
         self.check_success()
-        self.move(self.move_by_displacement(self.arm_tag, z=0.08))
-        self.move(self.open_gripper(self.arm_tag))
+        self.run_action_stage(
+            "retreat_above_toycar",
+            lambda: self.move_by_displacement(self.arm_tag, z=0.08),
+        )
+        self.run_action_stage(
+            "open_gripper_after_push",
+            lambda: self.open_gripper(self.arm_tag),
+        )
         self.info["info"] = {
             "{A}": f"057_toycar/base{self.toycar_id}",
             "{B}": "blue parking zone",

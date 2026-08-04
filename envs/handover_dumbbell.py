@@ -27,17 +27,22 @@ class handover_dumbbell(Base_Task):
 
     def play_once(self):
         self.set_subtask(0)
-        self.move(
-            self.grasp_actor(
+        self.run_action_stage(
+            "giver_grasp_dumbbell",
+            lambda: self.grasp_actor(
                 self.dumbbell,
                 arm_tag=self.giver_arm,
                 contact_point_id=0,
                 pre_grasp_dis=0.1,
             )
         )
-        self.move(self.move_by_displacement(self.giver_arm, z=0.12))
-        self.move(
-            self.place_actor(
+        self.run_action_stage(
+            "giver_lift_dumbbell",
+            lambda: self.move_by_displacement(self.giver_arm, z=0.12),
+        )
+        self.run_action_stage(
+            "giver_present_dumbbell",
+            lambda: self.place_actor(
                 self.dumbbell,
                 arm_tag=self.giver_arm,
                 target_pose=[0, -0.05, 0.95, 0.7071068, 0.7071068, 0, 0],
@@ -49,18 +54,23 @@ class handover_dumbbell(Base_Task):
         )
 
         self.set_subtask(1)
-        self.move(
-            self.grasp_actor(
+        self.run_action_stage(
+            "receiver_grasp_dumbbell",
+            lambda: self.grasp_actor(
                 self.dumbbell,
                 arm_tag=self.receiver_arm,
                 contact_point_id=1,
                 pre_grasp_dis=0.1,
             )
         )
-        self.move(self.open_gripper(self.giver_arm))
-        self.move(
-            self.move_by_displacement(self.giver_arm, z=0.07),
-            self.move_by_displacement(
+        self.run_action_stage(
+            "giver_release_dumbbell",
+            lambda: self.open_gripper(self.giver_arm),
+        )
+        self.run_action_stage(
+            "both_arms_retract_after_handover",
+            lambda: self.move_by_displacement(self.giver_arm, z=0.07),
+            lambda: self.move_by_displacement(
                 self.receiver_arm,
                 x=-0.07 if self.receiver_arm == "left" else 0.07,
             ),

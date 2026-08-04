@@ -47,10 +47,21 @@ class weigh_then_remove_object(Base_Task):
 
     def play_once(self):
         self.set_subtask(0)
-        self.move(self.grasp_actor(self.object, arm_tag=self.arm_tag, pre_grasp_dis=0.09))
-        self.move(self.move_by_displacement(self.arm_tag, z=0.12))
-        self.move(
-            self.place_actor(
+        self.run_action_stage(
+            "grasp_object_for_weighing",
+            lambda: self.grasp_actor(
+                self.object,
+                arm_tag=self.arm_tag,
+                pre_grasp_dis=0.09,
+            ),
+        )
+        self.run_action_stage(
+            "lift_object_for_weighing",
+            lambda: self.move_by_displacement(self.arm_tag, z=0.12),
+        )
+        self.run_action_stage(
+            "place_object_on_scale",
+            lambda: self.place_actor(
                 self.object,
                 arm_tag=self.arm_tag,
                 target_pose=self.scale.get_functional_point(0),
@@ -60,13 +71,27 @@ class weigh_then_remove_object(Base_Task):
             )
         )
         self.check_success()
-        self.move(self.move_by_displacement(self.arm_tag, z=0.08))
+        self.run_action_stage(
+            "retreat_after_weighing",
+            lambda: self.move_by_displacement(self.arm_tag, z=0.08),
+        )
 
         self.set_subtask(1)
-        self.move(self.grasp_actor(self.object, arm_tag=self.arm_tag, pre_grasp_dis=0.09))
-        self.move(self.move_by_displacement(self.arm_tag, z=0.1))
-        self.move(
-            self.place_actor(
+        self.run_action_stage(
+            "grasp_object_from_scale",
+            lambda: self.grasp_actor(
+                self.object,
+                arm_tag=self.arm_tag,
+                pre_grasp_dis=0.09,
+            ),
+        )
+        self.run_action_stage(
+            "lift_object_from_scale",
+            lambda: self.move_by_displacement(self.arm_tag, z=0.1),
+        )
+        self.run_action_stage(
+            "place_object_on_target_pad",
+            lambda: self.place_actor(
                 self.object,
                 arm_tag=self.arm_tag,
                 target_pose=self.target_pad.get_functional_point(1),
@@ -75,7 +100,10 @@ class weigh_then_remove_object(Base_Task):
                 constrain="free",
             )
         )
-        self.move(self.move_by_displacement(self.arm_tag, z=0.07))
+        self.run_action_stage(
+            "retreat_after_target_placement",
+            lambda: self.move_by_displacement(self.arm_tag, z=0.07),
+        )
         self.info["info"] = {
             "{A}": f"{self.object_name}/base{self.object_id}",
             "{B}": f"072_electronicscale/base{self.scale_id}",

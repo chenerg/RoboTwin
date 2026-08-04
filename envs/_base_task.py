@@ -85,6 +85,8 @@ class Base_Task(gym.Env):
 
         self.file_path = []
         self.plan_success = True
+        self.current_action_stage = None
+        self.failed_action_stage = None
         self.step_lim = None
         self.fix_gripper = False
         self.setup_scene()
@@ -923,6 +925,57 @@ class Base_Task(gym.Env):
 
         if save_freq != None:
             self._take_picture()
+
+    def report_action_stage_failure(self, stage_name: str, reason: str):
+        task_name = self.task_name or self.__class__.__name__
+        self.failed_action_stage = stage_name
+        if hasattr(self, "info"):
+            self.info["action_failure_stage"] = stage_name
+            self.info["action_failure_reason"] = reason
+        print(
+            f"\n[ActionStageError] task={task_name} "
+            f"stage={stage_name} reason={reason}"
+        )
+
+    def run_action_stage(
+        self,
+        stage_name: str,
+        action_builder,
+        second_action_builder=None,
+        save_freq=-1,
+    ):
+        """Build and execute an action while preserving its task-level stage."""
+        if not self.plan_success:
+            return False
+
+        self.current_action_stage = stage_name
+        try:
+            actions_by_arm1 = (
+                action_builder() if callable(action_builder) else action_builder
+            )
+            actions_by_arm2 = (
+                second_action_builder()
+                if callable(second_action_builder)
+                else second_action_builder
+            )
+            result = self.move(
+                actions_by_arm1,
+                actions_by_arm2,
+                save_freq=save_freq,
+            )
+        except Exception as exc:
+            self.report_action_stage_failure(
+                stage_name,
+                f"{type(exc).__name__}: {exc}",
+            )
+            raise
+        finally:
+            self.current_action_stage = None
+
+        if result is False or not self.plan_success:
+            reason = self.replay_failure_reason or "motion planning failed"
+            self.report_action_stage_failure(stage_name, reason)
+        return result
 
     def move(
         self,

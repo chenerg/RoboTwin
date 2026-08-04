@@ -38,23 +38,28 @@ class insert_markpen_into_pencup(Base_Task):
 
     def play_once(self):
         self.set_subtask(0)
-        self.move(
-            self.grasp_actor(
+        self.run_action_stage(
+            "grasp_markpen",
+            lambda: self.grasp_actor(
                 self.markpen,
                 arm_tag=self.arm_tag,
                 contact_point_id=[2, 4, 6],
                 pre_grasp_dis=0.09,
             )
         )
-        self.move(self.move_by_displacement(self.arm_tag, z=0.12))
+        self.run_action_stage(
+            "lift_markpen",
+            lambda: self.move_by_displacement(self.arm_tag, z=0.12),
+        )
 
         cup_pose = self.pencup.get_pose().p
         target_pose = sapien.Pose(
             [cup_pose[0], cup_pose[1], self._cup_rim_height() - 0.025],
             [0.7071068, 0.7071068, 0, 0],
         )
-        self.move(
-            self.place_actor(
+        self.run_action_stage(
+            "align_and_insert_markpen",
+            lambda: self.place_actor(
                 self.markpen,
                 arm_tag=self.arm_tag,
                 target_pose=target_pose,
@@ -65,7 +70,10 @@ class insert_markpen_into_pencup(Base_Task):
                 constrain="align",
             )
         )
-        self.move(self.move_by_displacement(self.arm_tag, z=0.08))
+        self.run_action_stage(
+            "retreat_above_pencup",
+            lambda: self.move_by_displacement(self.arm_tag, z=0.08),
+        )
         self.info["info"] = {
             "{A}": f"058_markpen/base{self.markpen_id}",
             "{B}": f"059_pencup/base{self.pencup_id}",

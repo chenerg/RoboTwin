@@ -36,17 +36,22 @@ class strike_gong_with_mallet(Base_Task):
 
     def play_once(self):
         self.set_subtask(0)
-        self.move(
-            self.grasp_actor(
+        self.run_action_stage(
+            "grasp_mallet",
+            lambda: self.grasp_actor(
                 self.mallet,
                 arm_tag=self.arm_tag,
                 contact_point_id=[0, 1],
                 pre_grasp_dis=0.1,
             )
         )
-        self.move(self.move_by_displacement(self.arm_tag, z=0.1))
-        self.move(
-            self.place_actor(
+        self.run_action_stage(
+            "lift_mallet",
+            lambda: self.move_by_displacement(self.arm_tag, z=0.1),
+        )
+        self.run_action_stage(
+            "strike_gong",
+            lambda: self.place_actor(
                 self.mallet,
                 arm_tag=self.arm_tag,
                 target_pose=self.gong.get_functional_point(2),
@@ -59,7 +64,14 @@ class strike_gong_with_mallet(Base_Task):
             )
         )
         self.check_success()
-        self.move(self.move_by_displacement(self.arm_tag, z=0.08, move_axis="arm"))
+        self.run_action_stage(
+            "retract_mallet",
+            lambda: self.move_by_displacement(
+                self.arm_tag,
+                z=0.08,
+                move_axis="arm",
+            ),
+        )
         self.info["info"] = {
             "{A}": f"084_woodenmallet/base{self.mallet_id}",
             "{B}": f"085_gong/base{self.gong_id}",

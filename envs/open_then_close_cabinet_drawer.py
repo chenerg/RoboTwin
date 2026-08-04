@@ -34,24 +34,37 @@ class open_then_close_cabinet_drawer(Base_Task):
 
     def play_once(self):
         self.set_subtask(0)
-        self.move(
-            self.grasp_actor(
+        self.run_action_stage(
+            "grasp_drawer_handle",
+            lambda: self.grasp_actor(
                 self.cabinet,
                 arm_tag=self.arm_tag,
                 pre_grasp_dis=0.06,
                 contact_point_id=0,
             )
         )
-        for _ in range(5):
-            self.move(self.move_by_displacement(self.arm_tag, y=-0.04))
+        for step in range(5):
+            self.run_action_stage(
+                f"open_drawer_step_{step + 1}",
+                lambda: self.move_by_displacement(self.arm_tag, y=-0.04),
+            )
             self.check_success()
 
         self.set_subtask(1)
-        for _ in range(5):
-            self.move(self.move_by_displacement(self.arm_tag, y=0.04))
+        for step in range(5):
+            self.run_action_stage(
+                f"close_drawer_step_{step + 1}",
+                lambda: self.move_by_displacement(self.arm_tag, y=0.04),
+            )
 
-        self.move(self.open_gripper(self.arm_tag))
-        self.move(self.back_to_origin(self.arm_tag))
+        self.run_action_stage(
+            "release_drawer_handle",
+            lambda: self.open_gripper(self.arm_tag),
+        )
+        self.run_action_stage(
+            "return_arm_to_origin",
+            lambda: self.back_to_origin(self.arm_tag),
+        )
         self.info["info"] = {
             "{A}": "036_cabinet/base0",
             "{a}": str(self.arm_tag),

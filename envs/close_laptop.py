@@ -46,8 +46,9 @@ class close_laptop(Base_Task):
 
         # Reverse open_laptop's CP0 -> CP1 opening motion: grasp CP1 in the
         # opened state and move the held point towards CP0 to close the lid.
-        self.move(
-            self.grasp_actor(
+        self.run_action_stage(
+            "grasp_screen_cp1",
+            lambda: self.grasp_actor(
                 self.laptop,
                 arm_tag=self.arm_tag,
                 pre_grasp_dis=0.08,
@@ -58,16 +59,23 @@ class close_laptop(Base_Task):
             return self.info
 
         previous_fraction = self._joint_fraction()
-        for _ in range(8):
+        for step in range(8):
             if self._is_closed_pose():
                 self.stage_success_tag = True
                 break
-            self.move(self._move_to_screen_contact(contact_point_id=0))
+            self.run_action_stage(
+                f"close_lid_step_{step + 1}",
+                lambda: self._move_to_screen_contact(contact_point_id=0),
+            )
             if not self.plan_success:
                 break
             current_fraction = self._joint_fraction()
             if current_fraction > previous_fraction + self.JOINT_DIRECTION_TOLERANCE:
                 self.plan_success = False
+                self.report_action_stage_failure(
+                    f"close_lid_step_{step + 1}",
+                    "laptop joint moved in the opening direction",
+                )
                 break
             previous_fraction = current_fraction
 
@@ -75,8 +83,14 @@ class close_laptop(Base_Task):
             self.stage_success_tag = True
 
         if self.plan_success:
-            self.move(self.open_gripper(self.arm_tag))
-            self.move(self.back_to_origin(self.arm_tag))
+            self.run_action_stage(
+                "release_screen",
+                lambda: self.open_gripper(self.arm_tag),
+            )
+            self.run_action_stage(
+                "return_arm_to_origin",
+                lambda: self.back_to_origin(self.arm_tag),
+            )
         return self.info
 
     def _move_to_screen_contact(self, contact_point_id):

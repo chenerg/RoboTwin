@@ -60,22 +60,27 @@ class pour_beads_between_bowls(Base_Task):
     def play_once(self):
         self.set_subtask(0)
         contact_point_id = 0 if self.arm_tag == "right" else 2
-        self.move(
-            self.grasp_actor(
+        self.run_action_stage(
+            "grasp_source_bowl",
+            lambda: self.grasp_actor(
                 self.source_bowl,
                 arm_tag=self.arm_tag,
                 contact_point_id=contact_point_id,
                 pre_grasp_dis=0.1,
             )
         )
-        self.move(self.move_by_displacement(self.arm_tag, z=0.13))
+        self.run_action_stage(
+            "lift_source_bowl",
+            lambda: self.move_by_displacement(self.arm_tag, z=0.13),
+        )
 
         target_p = self.target_bowl.get_pose().p
         tilt = t3d.euler.euler2quat(0, 1.15 if self.arm_tag == "left" else -1.15, 0)
         target_q = t3d.quaternions.qmult(self.source_bowl.get_pose().q, tilt)
         pour_pose = sapien.Pose([target_p[0], target_p[1], target_p[2] + 0.2], target_q)
-        self.move(
-            self.place_actor(
+        self.run_action_stage(
+            "move_and_tilt_bowl_above_target",
+            lambda: self.place_actor(
                 self.source_bowl,
                 arm_tag=self.arm_tag,
                 target_pose=pour_pose,
@@ -85,9 +90,21 @@ class pour_beads_between_bowls(Base_Task):
                 constrain="align",
             )
         )
-        for _ in range(2):
-            self.move(self.move_by_displacement(self.arm_tag, x=0.02 if self.arm_tag == "left" else -0.02))
-            self.move(self.move_by_displacement(self.arm_tag, x=-0.02 if self.arm_tag == "left" else 0.02))
+        for step in range(2):
+            self.run_action_stage(
+                f"shake_bowl_outward_{step + 1}",
+                lambda: self.move_by_displacement(
+                    self.arm_tag,
+                    x=0.02 if self.arm_tag == "left" else -0.02,
+                ),
+            )
+            self.run_action_stage(
+                f"shake_bowl_inward_{step + 1}",
+                lambda: self.move_by_displacement(
+                    self.arm_tag,
+                    x=-0.02 if self.arm_tag == "left" else 0.02,
+                ),
+            )
         self.delay(2)
         self.info["info"] = {
             "{A}": "002_bowl/base3",

@@ -36,15 +36,26 @@ class balance_globe_on_displaystand(Base_Task):
 
     def play_once(self):
         self.set_subtask(0)
-        self.move(self.grasp_actor(self.globe, arm_tag=self.arm_tag, pre_grasp_dis=0.1))
-        self.move(self.move_by_displacement(self.arm_tag, z=0.12))
+        self.run_action_stage(
+            "grasp_globe",
+            lambda: self.grasp_actor(
+                self.globe,
+                arm_tag=self.arm_tag,
+                pre_grasp_dis=0.1,
+            ),
+        )
+        self.run_action_stage(
+            "lift_globe",
+            lambda: self.move_by_displacement(self.arm_tag, z=0.12),
+        )
         stand_fp = self.displaystand.get_functional_point(0, "pose").p
         target_pose = sapien.Pose(
             [stand_fp[0], stand_fp[1], stand_fp[2] + 0.025],
             [0.5, 0.5, 0.5, 0.5],
         )
-        self.move(
-            self.place_actor(
+        self.run_action_stage(
+            "place_globe_on_displaystand",
+            lambda: self.place_actor(
                 self.globe,
                 arm_tag=self.arm_tag,
                 target_pose=target_pose,
@@ -53,7 +64,10 @@ class balance_globe_on_displaystand(Base_Task):
                 constrain="align",
             )
         )
-        self.move(self.move_by_displacement(self.arm_tag, z=0.08))
+        self.run_action_stage(
+            "retreat_above_displaystand",
+            lambda: self.move_by_displacement(self.arm_tag, z=0.08),
+        )
         self.info["info"] = {
             "{A}": f"089_globe/base{self.globe_id}",
             "{B}": f"074_displaystand/base{self.displaystand_id}",
