@@ -15,7 +15,7 @@ class push_toycar_to_parking_zone(Base_Task):
         side = float(np.random.choice([-1, 1]))
         self.toycar_id = np.random.randint(0, 6)
         lane_x = side * np.random.uniform(0.15, 0.21)
-        toycar_y = np.random.uniform(0.01, 0.07)
+        toycar_y = np.random.uniform(0.01, 0.05)
         self.toycar = create_actor(
             scene=self,
             pose=sapien.Pose([lane_x, toycar_y, 0.741], [0.7071068, 0.7071068, 0, 0]),

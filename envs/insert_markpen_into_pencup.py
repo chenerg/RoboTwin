@@ -14,7 +14,7 @@ class insert_markpen_into_pencup(Base_Task):
         self.markpen_id = np.random.randint(0, 6)
         self.pencup_id = int(np.random.choice([1, 3]))
         side = float(np.random.choice([-1, 1]))
-        markpen_x = side * np.random.uniform(0.20, 0.26)
+        markpen_x = side * np.random.uniform(0.20, 0.25)
         markpen_y = np.random.uniform(-0.01, 0.05)
 
         self.markpen = create_actor(

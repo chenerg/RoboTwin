@@ -15,8 +15,8 @@ class weigh_then_remove_object(Base_Task):
         self.object_name = "047_mouse"
         self.object_id = np.random.randint(0, 3)
         self.scale_id = int(np.random.choice([0, 1, 5, 6]))
-        object_x = side * np.random.uniform(0.20, 0.26)
-        object_y = np.random.uniform(0.01, 0.07)
+        object_x = side * np.random.uniform(0.20, 0.25)
+        object_y = np.random.uniform(0.01, 0.05)
         self.object = create_actor(
             scene=self,
             pose=sapien.Pose([object_x, object_y, 0.741], [0.5, 0.5, 0.5, 0.5]),
