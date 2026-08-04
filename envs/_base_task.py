@@ -526,31 +526,47 @@ class Base_Task(gym.Env):
         save_pkl(self.folder_path["cache"] + f"{self.FRAME_IDX}.pkl", pkl_dic)  # use cache
         self.FRAME_IDX += 1
 
-    def save_traj_data(self, idx):
-        file_path = os.path.join(self.save_dir, "_traj_data", f"episode{idx}.pkl")
+    def save_traj_data(self, idx, category="success", metadata=None):
+        trajectory_dir = os.path.join(self.save_dir, "_traj_data")
+        if category != "success":
+            trajectory_dir = os.path.join(trajectory_dir, category)
+        file_path = os.path.join(trajectory_dir, f"episode{idx}.pkl")
         traj_data = {
             "left_joint_path": deepcopy(self.left_joint_path),
             "right_joint_path": deepcopy(self.right_joint_path),
         }
+        if metadata is not None:
+            traj_data["metadata"] = deepcopy(metadata)
         save_pkl(file_path, traj_data)
 
-    def load_tran_data(self, idx):
+    def load_tran_data(self, idx, category="success"):
         assert self.save_dir is not None, "self.save_dir is None"
-        file_path = os.path.join(self.save_dir, "_traj_data", f"episode{idx}.pkl")
+        trajectory_dir = os.path.join(self.save_dir, "_traj_data")
+        if category != "success":
+            trajectory_dir = os.path.join(trajectory_dir, category)
+        file_path = os.path.join(trajectory_dir, f"episode{idx}.pkl")
         with open(file_path, "rb") as f:
             traj_data = pickle.load(f)
         return traj_data
 
-    def merge_pkl_to_hdf5_video(self):
+    def merge_pkl_to_hdf5_video(self, category="success", metadata=None):
         if not self.save_data:
             return
         cache_path = self.folder_path["cache"]
-        target_file_path = f"{self.save_dir}/data/episode{self.ep_num}.hdf5"
-        target_video_path = f"{self.save_dir}/video/episode{self.ep_num}.mp4"
+        output_dir = self.save_dir if category == "success" else os.path.join(self.save_dir, category)
+        target_file_path = os.path.join(output_dir, "data", f"episode{self.ep_num}.hdf5")
+        target_video_path = os.path.join(output_dir, "video", f"episode{self.ep_num}.mp4")
         # print('Merging pkl to hdf5: ', cache_path, ' -> ', target_file_path)
 
-        os.makedirs(f"{self.save_dir}/data", exist_ok=True)
+        os.makedirs(os.path.join(output_dir, "data"), exist_ok=True)
         process_folder_to_hdf5_video(cache_path, target_file_path, target_video_path)
+        if metadata:
+            import h5py
+
+            with h5py.File(target_file_path, "a") as hdf5_file:
+                for key, value in metadata.items():
+                    if value is not None:
+                        hdf5_file.attrs[key] = value
 
     def remove_data_cache(self):
         folder_path = self.folder_path["cache"]
