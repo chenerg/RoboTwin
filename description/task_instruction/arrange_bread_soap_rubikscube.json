@@ -1,0 +1,14 @@
+{
+  "full_description": "arrange the bread, soap, and Rubik's cube from front to back on the three pads",
+  "schema": "{A}, {B}, and {C} are the objects in front-to-back order; {a} is the arm used",
+  "preference": "State the required front-to-back order explicitly.",
+  "seen": [
+    "Use {a} to arrange {A}, {B}, then {C} from front to back.",
+    "Place {A}, {B}, and {C} on the front, middle, and back pads respectively.",
+    "Make a front-to-back row ordered {A}, {B}, {C}."
+  ],
+  "unseen": [
+    "Line up {A} nearest, {B} in the middle, and {C} farthest.",
+    "Fill the three pads from front to back with {A}, {B}, and {C}."
+  ]
+}

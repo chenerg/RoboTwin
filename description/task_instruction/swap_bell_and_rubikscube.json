@@ -1,0 +1,14 @@
+{
+  "full_description": "swap the positions of the bell and the Rubik's cube",
+  "schema": "{A} is the bell, {B} is the Rubik's cube, and {a} is the arm used",
+  "preference": "Preserve the two-object position-swap meaning.",
+  "seen": [
+    "Use {a} to swap the positions of {A} and {B}.",
+    "Exchange the starting locations of {A} and {B}.",
+    "Place {A} at {B}'s old spot and {B} at {A}'s old spot."
+  ],
+  "unseen": [
+    "Trade the table positions of {A} and {B}.",
+    "Switch where {A} and {B} are located."
+  ]
+}

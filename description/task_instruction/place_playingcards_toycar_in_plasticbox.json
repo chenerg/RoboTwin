@@ -1,0 +1,14 @@
+{
+  "full_description": "place the playing cards and toy car into the plastic box",
+  "schema": "{A} and {B} are the two objects, and {C} is the plastic box",
+  "preference": "Use in or into for the container relationship.",
+  "seen": [
+    "Place {A} and {B} into {C}.",
+    "Use both arms to put {A} and {B} in {C}.",
+    "Store {A} and {B} together inside {C}."
+  ],
+  "unseen": [
+    "Move the pair, {A} and {B}, into {C}.",
+    "Load {C} with {A} and {B}."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "full_description": "place the phone and remote control on their two display stands",
+  "schema": "{A} is the left object, {B} is the right object, and {C}/{D} are their display stands",
+  "preference": "Mention both objects and both target stands.",
+  "seen": [
+    "Place {A} on {C} and {B} on {D}.",
+    "Use both arms to put {A} on {C} and {B} on {D}.",
+    "Display {A} and {B} on {C} and {D}, respectively."
+  ],
+  "unseen": [
+    "Set {A} onto {C}, with {B} on {D}.",
+    "Move {A} and {B} to {C} and {D}, respectively."
+  ]
+}

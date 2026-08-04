@@ -1,0 +1,14 @@
+{
+  "full_description": "place the tea box and coffee box into the basket",
+  "schema": "{A} and {B} are the two boxes, and {C} is the basket",
+  "preference": "Use in or into for the container relationship.",
+  "seen": [
+    "Place both {A} and {B} into {C}.",
+    "Use both arms to put {A} and {B} in {C}.",
+    "Store {A} and {B} together inside {C}."
+  ],
+  "unseen": [
+    "Move the pair, {A} and {B}, into {C}.",
+    "Load {C} with {A} and {B}."
+  ]
+}

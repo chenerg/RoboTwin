@@ -1,0 +1,14 @@
+{
+  "full_description": "place the bread and can on the tray",
+  "schema": "{A} and {B} are the two objects, and {C} is the tray",
+  "preference": "Use on or onto for the tray relationship.",
+  "seen": [
+    "Place both {A} and {B} onto {C}.",
+    "Use both arms to put {A} and {B} on {C}.",
+    "Load {C} with {A} and {B}."
+  ],
+  "unseen": [
+    "Move the pair, {A} and {B}, onto {C}.",
+    "Set {A} and {B} on the two sides of {C}."
+  ]
+}

@@ -1,6 +1,6 @@
 # RoboTwin Task 构造规则、依赖条件与现有任务索引
 
-本文档基于当前仓库中的 82 个 `envs/*.py` task、82 个语言模板和 82 项评测步数配置整理。它描述的是当前代码实际采用的约定，而不是一个与实现无关的抽象接口。第 9 章集中介绍最近添加的 31 个任务。
+本文档基于当前仓库中的 97 个 `envs/*.py` task、97 个语言模板和 97 项评测步数配置整理。它描述的是当前代码实际采用的约定，而不是一个与实现无关的抽象接口。第 9、10 章介绍基线之后添加的任务。
 
 ## 1. 总体结构
 
@@ -15,9 +15,9 @@
 
 当前一共有：
 
-- 82 个 task Python 文件；
-- 82 个 task instruction JSON；
-- 82 个评测步数配置；
+- 97 个 task Python 文件；
+- 97 个 task instruction JSON；
+- 97 个评测步数配置；
 - 120 类编号资产，其中 59 类被 task 显式引用。
 
 ### 1.1 生命周期
@@ -418,7 +418,7 @@ class my_new_task(Base_Task):
 - **程序生成任务 20 个**：通过共享 primitive policy 实现跨色放置、相对方位、堆叠、排序和双目标映射。
 - **异构任务 11 个**：直接使用刚体、URDF 关节、程序生成 sphere 和接触状态，覆盖关节循环、插入、工具使用、擦拭、倾倒、推动、handover、姿态放置和时序操作。
 
-批量脚本 [`collect_new_tasks_data.sh`](../collect_new_tasks_data.sh) 保存这 31 个名称，并在启动前验证所有任务的 policy、同名类、instruction JSON 和评测步数配置。
+批量脚本 [`collect_new_tasks_data.sh`](../collect_new_tasks_data.sh) 保存这 31 个名称以及第 10 章的 15 个名称，并在启动前验证所有任务的 policy、同名类、instruction JSON 和评测步数配置。
 
 ### 9.1 共享 primitive policy
 
@@ -432,7 +432,7 @@ class my_new_task(Base_Task):
 | `RankBlocksPolicy` | 将三块 block 按指定颜色顺序排列成一行 | 3 |
 | `PlaceBlocksOnPadsPolicy` | 将两块 block 顺序放到匹配或交叉颜色 pad | 3 |
 
-`_primitive_task_policy.py` 是内部辅助模块，不是独立 task，因此没有同名 instruction JSON 和评测步数配置，也不计入 82 个 task。它集中实现：
+`_primitive_task_policy.py` 是内部辅助模块，不是独立 task，因此没有同名 instruction JSON 和评测步数配置，也不计入 task 总数。它集中实现：
 
 - 七种 block/pad 颜色和程序生成几何体；
 - 最多 200 次的拒绝采样、中央死区规避和 12 cm 最小间距；
@@ -535,7 +535,7 @@ class place_blue_block_green_pad(PlaceBlockOnPadPolicy):
 - `push_toycar_to_parking_zone` 必须证明发生推动接触，不能只检查最终位置；
 - `weigh_then_remove_object` 的最终状态不在秤上，必须用阶段记忆保留“曾完成称重”。
 
-### 9.8 批量采集 31 个任务
+### 9.8 批量采集基线后任务
 
 批量入口为：
 
@@ -543,7 +543,7 @@ class place_blue_block_green_pad(PlaceBlockOnPadPolicy):
 bash collect_new_tasks_data.sh <task_config> <gpu_id> [options]
 ```
 
-采集全部 31 个新任务：
+采集第 9 章的 31 个任务及第 10 章的 15 个家庭物体任务：
 
 ```bash
 bash collect_new_tasks_data.sh demo_clean 0
@@ -557,9 +557,34 @@ bash collect_new_tasks_data.sh demo_clean 0 --dry-run
 
 可选 `--continue-on-error` 让单个 task 失败后继续处理后续任务；`--skip-missing` 保留为开发期间临时跳过不完整任务的选项。脚本启动前会验证每个 task 是否同时具有 policy、同名类、instruction JSON 和 eval step limit。底层 `collect_data.py` 会读取已有 `seed.txt` 和连续的 `episode<N>.hdf5`，所以重新执行同一命令可以从已有结果续跑。
 
-当前 31 个新任务已经通过 Python 语法、JSON 解析、动态命名契约、配置唯一性和 instruction 过滤兼容性静态检查；仍需在正式 SAPIEN/GPU 环境下用多个 seed 完成专家规划与轨迹重放验收。
+当前新增任务已经通过 Python 语法、JSON 解析、动态命名契约、配置唯一性和 instruction 过滤兼容性静态检查；仍需在正式 SAPIEN/GPU 环境下用多个 seed 完成专家规划与轨迹重放验收。
 
-## 10. 维护建议
+## 10. 新增 15 个家庭物体 Task
+
+这 15 个任务只使用原有 51 个 task 已经引用过的刚体资产，不增加新资产依赖。它们通过
+[`envs/_household_task_policy.py`](../envs/_household_task_policy.py) 共享采样、分阶段专家动作、成功判定和 episode metadata；该文件是内部 policy，不计入 task 总数。
+
+| 类型 | Task | 新任务语义 | 步数 |
+|---|---|---|---:|
+| 三步交换 | `swap_mouse_and_stapler` | 借助临时空位完整交换 mouse 与 stapler 的初始位置 | 1000 |
+| 三步交换 | `swap_phone_and_remotecontrol` | 完整交换 phone 与 remote control 的初始位置 | 1000 |
+| 三步交换 | `swap_bell_and_rubikscube` | 完整交换 bell 与 Rubik's cube 的初始位置 | 1000 |
+| 三步交换 | `swap_toycar_and_playingcards` | 完整交换 toycar 与 playing cards 的初始位置 | 1000 |
+| 三步交换 | `swap_tea_box_and_coffee_box` | 完整交换 tea box 与 coffee box 的初始位置 | 1000 |
+| 异构排序 | `arrange_mouse_bell_stapler` | 按 mouse、bell、stapler 的语义顺序由前向后排列 | 1000 |
+| 异构排序 | `arrange_phone_remotecontrol_toycar` | 按 phone、remote、toycar 的语义顺序排列 | 1000 |
+| 异构排序 | `arrange_bread_soap_rubikscube` | 按 bread、soap、cube 的语义顺序排列 | 1000 |
+| 异构排序 | `arrange_playingcards_tea_coffee_boxes` | 按 cards、tea box、coffee box 的语义顺序排列 | 1000 |
+| 异构排序 | `arrange_bottle_can_cup` | 按 bottle、can、cup 的语义顺序排列 | 1000 |
+| 双目标放置 | `place_phone_remotecontrol_on_dual_stands` | 双臂把两种电子物体分别放上两个展示台 | 700 |
+| 双目标放置 | `place_mouse_bell_on_dual_coasters` | 双臂把 mouse 与 bell 分别放上两个 coaster | 700 |
+| 双目标放置 | `place_playingcards_toycar_in_plasticbox` | 把 cards 与 toycar 放入同一 plastic box 的两个位置 | 800 |
+| 双目标放置 | `place_tea_coffee_boxes_in_basket` | 把 tea/coffee box 放入 basket 的两个位置 | 800 |
+| 双目标放置 | `place_bread_can_on_tray` | 把 bread 与 can 分别放到 tray 两侧 | 700 |
+
+交换任务与现有单次相对放置不同：必须保留两个初始位置，通过“物体 A 到暂存位、物体 B 到 A 原位、物体 A 到 B 原位”三个 subtask 完成闭环。异构排序任务不同于已有的同形 block 颜色/尺寸排序，要求模型区分三种不同类别的家庭物体。双目标任务则固定了新的跨类别 source-target 组合，并对两个目标同时判定。
+
+## 11. 维护建议
 
 新增或修改资产后，建议自动生成一份资产能力表，至少检查每个模型变体是否具有：
 

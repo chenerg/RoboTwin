@@ -1,0 +1,14 @@
+{
+  "full_description": "place the mouse and bell on the two coasters",
+  "schema": "{A} is the left object, {B} is the right object, and {C}/{D} are their coasters",
+  "preference": "Mention both objects and the two separate coasters.",
+  "seen": [
+    "Place {A} on {C} and {B} on {D}.",
+    "Put {A} on {C} and {B} on {D}.",
+    "Move {A} and {B} onto {C} and {D}, respectively."
+  ],
+  "unseen": [
+    "Set {A} on {C}, with {B} on {D}.",
+    "Use both arms to place {A} and {B} on {C} and {D}."
+  ]
+}

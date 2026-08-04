@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Collect demonstrations for the 31 implemented RoboTwin tasks added in this batch.
+# Collect demonstrations for the post-baseline RoboTwin tasks added in this repository.
 # collect_data.py already resumes seed search and HDF5 replay, so rerunning this
 # script safely continues each task from its existing output directory.
 
@@ -123,6 +123,23 @@ tasks=(
     handover_dumbbell
     balance_globe_on_displaystand
     weigh_then_remove_object
+
+    # Household-object rearrangement tasks built from original-suite assets.
+    swap_mouse_and_stapler
+    swap_phone_and_remotecontrol
+    swap_bell_and_rubikscube
+    swap_toycar_and_playingcards
+    swap_tea_box_and_coffee_box
+    arrange_mouse_bell_stapler
+    arrange_phone_remotecontrol_toycar
+    arrange_bread_soap_rubikscube
+    arrange_playingcards_tea_coffee_boxes
+    arrange_bottle_can_cup
+    place_phone_remotecontrol_on_dual_stands
+    place_mouse_bell_on_dual_coasters
+    place_playingcards_toycar_in_plasticbox
+    place_tea_coffee_boxes_in_basket
+    place_bread_can_on_tray
 )
 
 missing_tasks=()

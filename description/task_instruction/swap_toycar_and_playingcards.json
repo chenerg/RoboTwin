@@ -1,0 +1,14 @@
+{
+  "full_description": "swap the positions of the toy car and the playing cards",
+  "schema": "{A} is the toy car, {B} is the playing cards, and {a} is the arm used",
+  "preference": "Preserve the two-object position-swap meaning.",
+  "seen": [
+    "Use {a} to swap the positions of {A} and {B}.",
+    "Exchange the original places of {A} and {B}.",
+    "Move {A} to {B}'s start and {B} to {A}'s start."
+  ],
+  "unseen": [
+    "Trade the locations occupied by {A} and {B}.",
+    "Switch {A} and {B} on the table."
+  ]
+}

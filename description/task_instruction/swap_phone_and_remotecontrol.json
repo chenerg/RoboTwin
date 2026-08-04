@@ -1,0 +1,14 @@
+{
+  "full_description": "swap the positions of the phone and the remote control",
+  "schema": "{A} is the phone, {B} is the remote control, and {a} is the arm used",
+  "preference": "Preserve the two-object position-swap meaning.",
+  "seen": [
+    "Use {a} to swap the positions of {A} and {B}.",
+    "Exchange the original table locations of {A} and {B}.",
+    "Put {A} where {B} began and {B} where {A} began."
+  ],
+  "unseen": [
+    "Trade the places occupied by {A} and {B}.",
+    "Switch {A} with {B}, completing both halves of the exchange."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "full_description": "swap the positions of the mouse and the stapler",
+  "schema": "{A} is the mouse, {B} is the stapler, and {a} is the arm used",
+  "preference": "Preserve the two-object position-swap meaning.",
+  "seen": [
+    "Use {a} to swap the positions of {A} and {B}.",
+    "Exchange where {A} and {B} are sitting.",
+    "Move {A} to {B}'s original spot and {B} to {A}'s original spot."
+  ],
+  "unseen": [
+    "Trade the table locations of {A} and {B}.",
+    "Switch {A} and {B} without leaving either at the staging spot."
+  ]
+}
