@@ -102,6 +102,228 @@ try:
                 return value.item() if value.numel() == 1 else value.tolist()
             return value
 
+        @staticmethod
+        def _status_name(value):
+            """Keep the enum member name; ``Enum.value`` is often too generic."""
+            if value is None:
+                return None
+            name = getattr(value, "name", None)
+            return name if name is not None else str(value)
+
+        @staticmethod
+        def _as_numpy(value):
+            if value is None:
+                return None
+            if torch.is_tensor(value):
+                value = value.detach().cpu().numpy()
+            try:
+                return np.asarray(value, dtype=np.float64)
+            except (TypeError, ValueError):
+                return None
+
+        @classmethod
+        def _minimum_finite_value(cls, value):
+            array = cls._as_numpy(value)
+            if array is None:
+                return None
+            finite = array[np.isfinite(array)]
+            return None if finite.size == 0 else float(np.min(finite))
+
+        def _joint_limit_diagnostics(self, joint_positions, near_limit=0.05):
+            """Return joint-limit margins using the bounds used by CuRobo."""
+            positions = self._as_numpy(joint_positions)
+            if positions is None:
+                return {"available": False, "reason": "joint positions unavailable"}
+            positions = positions.reshape(-1)
+
+            bounds_source = None
+            for candidate in (
+                getattr(getattr(self.motion_gen.ik_solver, "solver", None), "safety_rollout", None),
+                getattr(self.motion_gen, "rollout_fn", None),
+            ):
+                if candidate is None:
+                    continue
+                lower = self._as_numpy(getattr(candidate, "action_bound_lows", None))
+                upper = self._as_numpy(getattr(candidate, "action_bound_highs", None))
+                if lower is None or upper is None:
+                    continue
+                lower = lower.reshape(-1)
+                upper = upper.reshape(-1)
+                if lower.size == positions.size and upper.size == positions.size:
+                    bounds_source = candidate
+                    break
+
+            if bounds_source is None:
+                return {"available": False, "reason": "CuRobo joint bounds unavailable"}
+
+            lower_margin = positions - lower
+            upper_margin = upper - positions
+            margins = np.minimum(lower_margin, upper_margin)
+            names = list(self.active_joints_name)
+            if len(names) != positions.size:
+                names = [f"joint_{index}" for index in range(positions.size)]
+
+            violations = []
+            near_limits = []
+            for index, margin in enumerate(margins):
+                item = {
+                    "joint": names[index],
+                    "position": float(positions[index]),
+                    "lower": float(lower[index]),
+                    "upper": float(upper[index]),
+                    "margin": float(margin),
+                }
+                if margin < 0:
+                    violations.append(item)
+                elif margin <= near_limit:
+                    near_limits.append(item)
+
+            return {
+                "available": True,
+                "within_limits": len(violations) == 0,
+                "minimum_margin": float(np.min(margins)),
+                "near_limit_threshold": float(near_limit),
+                "violations": violations,
+                "near_limits": near_limits,
+            }
+
+        def _constraint_diagnostics(self, joint_state):
+            """Ask CuRobo to separate joint, world and self-collision constraints."""
+            try:
+                valid, status = self.motion_gen.check_start_state(joint_state)
+                return {
+                    "available": True,
+                    "valid": bool(valid),
+                    "status_name": self._status_name(status),
+                    "status": self._to_python_value(status),
+                }
+            except Exception as exc:
+                # Diagnostics must never turn a normal planning failure into a crash.
+                return {
+                    "available": False,
+                    "reason": f"{type(exc).__name__}: {exc}",
+                }
+
+        @staticmethod
+        def _category_from_constraint_status(status_name):
+            mapping = {
+                "INVALID_START_STATE_JOINT_LIMITS": "joint_limit",
+                "INVALID_START_STATE_SELF_COLLISION": "self_collision",
+                # The only world obstacle configured by this planner is named "table".
+                "INVALID_START_STATE_WORLD_COLLISION": "table_collision",
+            }
+            return mapping.get(status_name)
+
+        def _ik_failure_diagnostics(self, goal_pose, start_joint_state):
+            """Inspect the best failed IK candidate without changing planning semantics."""
+            diagnostics = {
+                "available": False,
+                "note": "target-candidate checks are diagnostic evidence, not a proof that every IK seed failed for the same reason",
+            }
+            try:
+                ik_result = self.motion_gen.ik_solver.solve_single(
+                    goal_pose,
+                    retract_config=start_joint_state.position,
+                    return_seeds=1,
+                )
+                position_error = self._minimum_finite_value(ik_result.position_error)
+                rotation_error = self._minimum_finite_value(ik_result.rotation_error)
+                position_threshold = float(self.motion_gen.ik_solver.position_threshold)
+                rotation_threshold = float(self.motion_gen.ik_solver.rotation_threshold)
+                diagnostics.update(
+                    {
+                        "available": True,
+                        "success": bool(torch.any(ik_result.success).item()),
+                        "position_error": position_error,
+                        "position_threshold": position_threshold,
+                        "position_error_above_threshold": (
+                            position_error is not None and position_error > position_threshold
+                        ),
+                        "rotation_error": rotation_error,
+                        "rotation_threshold": rotation_threshold,
+                        "rotation_error_above_threshold": (
+                            rotation_error is not None and rotation_error > rotation_threshold
+                        ),
+                    }
+                )
+
+                solutions = ik_result.solution
+                if solutions is not None and solutions.numel() > 0:
+                    candidates = solutions.reshape(-1, solutions.shape[-1])
+                    errors = self._as_numpy(getattr(ik_result, "error", None))
+                    candidate_index = 0
+                    if errors is not None and errors.size == candidates.shape[0]:
+                        candidate_index = int(np.nanargmin(errors.reshape(-1)))
+                    candidate = candidates[candidate_index].reshape(1, -1)
+                    candidate_state = JointState.from_position(
+                        candidate,
+                        joint_names=self.active_joints_name,
+                    )
+                    diagnostics["candidate_joint_positions"] = self._to_python_value(candidate.reshape(-1))
+                    diagnostics["candidate_joint_limits"] = self._joint_limit_diagnostics(candidate)
+                    diagnostics["candidate_constraints"] = self._constraint_diagnostics(candidate_state)
+            except Exception as exc:
+                diagnostics["reason"] = f"{type(exc).__name__}: {exc}"
+            return diagnostics
+
+        def _classify_planning_failure(self, result, goal_pose, start_joint_state):
+            status_name = self._status_name(getattr(result, "status", None))
+            start_constraints = self._constraint_diagnostics(start_joint_state)
+            start_joint_limits = self._joint_limit_diagnostics(start_joint_state.position)
+            evidence = {
+                "start_constraints": start_constraints,
+                "start_joint_limits": start_joint_limits,
+            }
+
+            category = self._category_from_constraint_status(start_constraints.get("status_name"))
+            confidence = "exact" if category is not None else None
+            if category is None:
+                category = self._category_from_constraint_status(status_name)
+                confidence = "exact" if category is not None else None
+
+            ik_diagnostics = None
+            if status_name in ("IK_FAIL", "IK Fail", "MotionGenStatus.IK_FAIL"):
+                ik_diagnostics = self._ik_failure_diagnostics(goal_pose, start_joint_state)
+                evidence["target_ik"] = ik_diagnostics
+                candidate_status = (
+                    ik_diagnostics.get("candidate_constraints", {}).get("status_name")
+                    if ik_diagnostics is not None
+                    else None
+                )
+                candidate_category = self._category_from_constraint_status(candidate_status)
+                if category is None and candidate_category is not None:
+                    category = candidate_category
+                    confidence = "best_ik_candidate"
+                if category is None and ik_diagnostics.get("available"):
+                    if ik_diagnostics.get("success"):
+                        category = "ik_sampling_instability"
+                        confidence = "diagnostic_retry_succeeded"
+                    else:
+                        position_bad = ik_diagnostics.get("position_error_above_threshold")
+                        rotation_bad = ik_diagnostics.get("rotation_error_above_threshold")
+                        if position_bad and rotation_bad:
+                            category = "position_and_rotation_error"
+                        elif position_bad:
+                            category = "position_error"
+                        elif rotation_bad:
+                            category = "rotation_error"
+                        else:
+                            category = "ik_no_feasible_seed"
+                        confidence = "threshold_evidence"
+
+            if category is None:
+                category = {
+                    "GRAPH_FAIL": "graph_search",
+                    "Graph Fail": "graph_search",
+                    "TRAJOPT_FAIL": "trajectory_optimization",
+                    "TrajOpt Fail": "trajectory_optimization",
+                    "FINETUNE_TRAJOPT_FAIL": "finetune_trajectory_optimization",
+                    "Finetune TrajOpt Fail": "finetune_trajectory_optimization",
+                }.get(status_name, "unknown")
+                confidence = "exact" if category != "unknown" else "unavailable"
+
+            return category, confidence, evidence
+
         def plan_path(
             self,
             curr_joint_pos,
@@ -158,6 +380,11 @@ try:
             res_result = dict()
             if result.success.item() == False:
                 res_result["status"] = "Fail"
+                failure_category, failure_confidence, failure_evidence = self._classify_planning_failure(
+                    result,
+                    goal_pose_of_ee,
+                    start_joint_states,
+                )
                 diagnostic_fields = (
                     "status",
                     "valid_query",
@@ -181,6 +408,10 @@ try:
                 diagnostics.update(
                     {
                         "arm": arms_tag,
+                        "status_name": self._status_name(getattr(result, "status", None)),
+                        "failure_category": failure_category,
+                        "failure_confidence": failure_confidence,
+                        "failure_evidence": failure_evidence,
                         "start_joint_positions": joint_angles,
                         "target_pose_in_base_frame": (
                             list(target_pose_p) + list(target_pose_q)

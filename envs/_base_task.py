@@ -796,6 +796,9 @@ class Base_Task(gym.Env):
 
         if left_result["status"] != "Success":
             self.plan_success = False
+            category = left_result.get("diagnostics", {}).get("failure_category")
+            if category:
+                self.replay_failure_reason = f"left arm planning failed: {category}"
             return
 
         return left_result
@@ -830,6 +833,9 @@ class Base_Task(gym.Env):
 
         if right_result["status"] != "Success":
             self.plan_success = False
+            category = right_result.get("diagnostics", {}).get("failure_category")
+            if category:
+                self.replay_failure_reason = f"right arm planning failed: {category}"
             return
 
         return right_result
