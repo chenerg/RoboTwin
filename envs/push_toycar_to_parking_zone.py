@@ -8,6 +8,12 @@ from .utils import *
 
 class push_toycar_to_parking_zone(Base_Task):
 
+    BEHIND_CAR_OFFSET = 0.065
+    PUSH_HEIGHT_OFFSET = 0.05
+    SAFE_APPROACH_HEIGHT_OFFSET = 0.14
+    PARKING_END_OFFSET = 0.045
+    PUSH_GRIPPER_POS = 0.3
+
     def setup_demo(self, **kwargs):
         super()._init_task_env_(**kwargs)
 
@@ -40,17 +46,32 @@ class push_toycar_to_parking_zone(Base_Task):
     def play_once(self):
         self.set_subtask(0)
         car_p = self.toycar.get_pose().p
-        pre_push = [car_p[0], car_p[1] + 0.08, car_p[2] + 0.045] + GRASP_DIRECTION_DIC["front"]
+        push_y = car_p[1] + self.BEHIND_CAR_OFFSET
+        push_z = car_p[2] + self.PUSH_HEIGHT_OFFSET
+        pre_push_above = [
+            car_p[0],
+            push_y,
+            car_p[2] + self.SAFE_APPROACH_HEIGHT_OFFSET,
+        ] + GRASP_DIRECTION_DIC["front"]
+        pre_push = [car_p[0], push_y, push_z] + GRASP_DIRECTION_DIC["front"]
         target_p = self.parking_pad.get_pose().p
-        push_end = [target_p[0], target_p[1] + 0.045, car_p[2] + 0.045] + GRASP_DIRECTION_DIC["front"]
+        push_end = [
+            target_p[0],
+            target_p[1] + self.PARKING_END_OFFSET,
+            push_z,
+        ] + GRASP_DIRECTION_DIC["front"]
 
+        self.run_action_stage(
+            "set_gripper_for_push",
+            lambda: self.close_gripper(self.arm_tag, pos=self.PUSH_GRIPPER_POS),
+        )
+        self.run_action_stage(
+            "move_above_behind_toycar",
+            lambda: self.move_to_pose(self.arm_tag, pre_push_above),
+        )
         self.run_action_stage(
             "move_behind_toycar",
             lambda: self.move_to_pose(self.arm_tag, pre_push),
-        )
-        self.run_action_stage(
-            "set_gripper_for_push",
-            lambda: self.close_gripper(self.arm_tag, pos=0.3),
         )
         self.run_action_stage(
             "push_toycar_to_parking_zone",
