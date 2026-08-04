@@ -12,7 +12,7 @@ class insert_markpen_into_pencup(Base_Task):
 
     def load_actors(self):
         self.markpen_id = np.random.randint(0, 6)
-        self.pencup_id = int(np.random.choice([1, 3]))
+        self.pencup_id = int(np.random.choice([1, 5]))
         side = float(np.random.choice([-1, 1]))
         markpen_x = side * np.random.uniform(0.20, 0.25)
         markpen_y = np.random.uniform(-0.01, 0.05)
@@ -41,18 +41,24 @@ class insert_markpen_into_pencup(Base_Task):
 
     def play_once(self):
         self.set_subtask(0)
+        grasp_point_id = 3 if self.arm_tag == "left" else 5
         self.run_action_stage(
             "grasp_markpen",
             lambda: self.grasp_actor(
                 self.markpen,
                 arm_tag=self.arm_tag,
-                contact_point_id=[2, 4, 6],
-                pre_grasp_dis=0.09,
+                contact_point_id=grasp_point_id,
+                pre_grasp_dis=0.10,
             )
         )
+        lift_x = -0.04 if self.arm_tag == "left" else 0.04
         self.run_action_stage(
             "lift_markpen",
-            lambda: self.move_by_displacement(self.arm_tag, z=0.12),
+            lambda: self.move_by_displacement(
+                self.arm_tag,
+                x=lift_x,
+                z=0.07,
+            ),
         )
 
         cup_pose = self.pencup.get_pose().p
