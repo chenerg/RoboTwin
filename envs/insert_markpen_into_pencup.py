@@ -24,7 +24,7 @@ class insert_markpen_into_pencup(Base_Task):
         )
         self.pencup = create_actor(
             scene=self,
-            pose=sapien.Pose([side * 0.06, -0.13, 0.741], [0.5, 0.5, 0.5, 0.5]),
+            pose=sapien.Pose([side * 0.1, -0.13, 0.741], [0.5, 0.5, 0.5, 0.5]),
             modelname="059_pencup",
             model_id=self.pencup_id,
             convex=True,
@@ -34,6 +34,7 @@ class insert_markpen_into_pencup(Base_Task):
         self.arm_tag = ArmTag("left" if side < 0 else "right")
         self.add_prohibit_area(self.markpen, padding=0.07)
         self.add_prohibit_area(self.pencup, padding=0.07)
+        self.insert_point_id = self._get_insert_point_id()
 
     def play_once(self):
         self.set_subtask(0)
@@ -41,7 +42,7 @@ class insert_markpen_into_pencup(Base_Task):
             self.grasp_actor(
                 self.markpen,
                 arm_tag=self.arm_tag,
-                contact_point_id=[0, 2, 4, 6],
+                contact_point_id=[2, 4, 6],
                 pre_grasp_dis=0.09,
             )
         )
@@ -49,7 +50,7 @@ class insert_markpen_into_pencup(Base_Task):
 
         cup_pose = self.pencup.get_pose().p
         target_pose = sapien.Pose(
-            [cup_pose[0], cup_pose[1], cup_pose[2] + 0.105],
+            [cup_pose[0], cup_pose[1], self._cup_rim_height() - 0.025],
             [0.7071068, 0.7071068, 0, 0],
         )
         self.move(
@@ -57,9 +58,10 @@ class insert_markpen_into_pencup(Base_Task):
                 self.markpen,
                 arm_tag=self.arm_tag,
                 target_pose=target_pose,
-                pre_dis=0.1,
-                dis=0.015,
-                pre_dis_axis=[0, 0, 1],
+                functional_point_id=self.insert_point_id,
+                pre_dis=0.12,
+                dis=0.005,
+                pre_dis_axis=[0, -1, 0],
                 constrain="align",
             )
         )
@@ -71,16 +73,40 @@ class insert_markpen_into_pencup(Base_Task):
         }
         return self.info
 
+    def _get_insert_point_id(self):
+        root_position = self.markpen.get_pose().p
+        functional_points = [
+            self.markpen.get_functional_point(index, "pose").p
+            for index in range(len(self.markpen.config["functional_matrix"]))
+        ]
+        distances = [
+            np.linalg.norm(point - root_position) for point in functional_points
+        ]
+        return int(np.argmin(distances))
+
+    def _cup_rim_height(self):
+        config = self.pencup.config
+        center = np.asarray(config["center"], dtype=np.float64)
+        half_extents = np.asarray(config["extents"], dtype=np.float64) / 2
+        scale = np.asarray(config["scale"], dtype=np.float64)
+        local_top = (center + np.array([0, half_extents[1], 0])) * scale
+        cup_matrix = self.pencup.get_pose().to_transformation_matrix()
+        return float((cup_matrix @ np.append(local_top, 1.0))[2])
+
     def check_success(self):
         pen_pose = self.markpen.get_pose()
         cup_pose = self.pencup.get_pose().p
+        insert_point = self.markpen.get_functional_point(
+            self.insert_point_id, "pose"
+        ).p
+        rim_height = self._cup_rim_height()
         pen_axis = pen_pose.to_transformation_matrix()[:3, :3] @ np.array([0, 1, 0])
         upright = np.dot(pen_axis, [0, 0, 1]) > 0.8
-        inside_xy = np.linalg.norm(pen_pose.p[:2] - cup_pose[:2]) < 0.035
-        height_ok = cup_pose[2] + 0.055 < pen_pose.p[2] < cup_pose[2] + 0.17
+        inside_xy = np.linalg.norm(insert_point[:2] - cup_pose[:2]) < 0.03
+        insertion_depth_ok = rim_height - 0.05 < insert_point[2] < rim_height + 0.01
         return (
             inside_xy
-            and height_ok
+            and insertion_depth_ok
             and upright
             and self.check_actors_contact("058_markpen", "059_pencup")
             and self.is_left_gripper_open()
