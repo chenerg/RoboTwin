@@ -14,9 +14,11 @@ class strike_gong_with_mallet(Base_Task):
         side = float(np.random.choice([-1, 1]))
         self.mallet_id = 3
         self.gong_id = np.random.randint(0, 6)
+        mallet_x = side * np.random.uniform(0.20, 0.26)
+        mallet_y = np.random.uniform(0.01, 0.07)
         self.mallet = create_actor(
             scene=self,
-            pose=sapien.Pose([side * 0.23, 0.04, 0.77], [1, 0, 0, 0]),
+            pose=sapien.Pose([mallet_x, mallet_y, 0.77], [1, 0, 0, 0]),
             modelname="084_woodenmallet",
             model_id=self.mallet_id,
             convex=True,

@@ -247,6 +247,9 @@ def eval_policy(task_name,
             succ_seed += 1
             suc_test_seed_list.append(now_seed)
         else:
+            failure_detail = getattr(TASK_ENV, "task_failure_reason", None)
+            if failure_detail:
+                print(f"\033[91mExpert check failure reason: {failure_detail}\033[0m")
             now_seed += 1
             args["render_freq"] = render_freq
             continue
@@ -305,6 +308,9 @@ def eval_policy(task_name,
             print("\033[92mSuccess!\033[0m")
         else:
             print("\033[91mFail!\033[0m")
+            failure_detail = getattr(TASK_ENV, "task_failure_reason", None)
+            if failure_detail:
+                print(f"\033[91mFailure reason: {failure_detail}\033[0m")
 
         now_id += 1
         TASK_ENV.close_env(clear_cache=((succ_seed + 1) % clear_cache_freq == 0))

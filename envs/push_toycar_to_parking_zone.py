@@ -14,16 +14,18 @@ class push_toycar_to_parking_zone(Base_Task):
     def load_actors(self):
         side = float(np.random.choice([-1, 1]))
         self.toycar_id = np.random.randint(0, 6)
+        lane_x = side * np.random.uniform(0.15, 0.21)
+        toycar_y = np.random.uniform(0.01, 0.07)
         self.toycar = create_actor(
             scene=self,
-            pose=sapien.Pose([side * 0.18, 0.04, 0.741], [0.7071068, 0.7071068, 0, 0]),
+            pose=sapien.Pose([lane_x, toycar_y, 0.741], [0.7071068, 0.7071068, 0, 0]),
             modelname="057_toycar",
             model_id=self.toycar_id,
             convex=True,
         )
         self.parking_pad = create_box(
             scene=self,
-            pose=sapien.Pose([side * 0.18, -0.17, 0.741], [1, 0, 0, 0]),
+            pose=sapien.Pose([lane_x, -0.17, 0.741], [1, 0, 0, 0]),
             half_size=(0.065, 0.06, 0.0005),
             color=(0.15, 0.45, 1.0),
             is_static=True,

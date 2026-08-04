@@ -12,12 +12,14 @@ class insert_markpen_into_pencup(Base_Task):
 
     def load_actors(self):
         self.markpen_id = np.random.randint(0, 6)
-        self.pencup_id = np.random.randint(0, 7)
+        self.pencup_id = int(np.random.choice([1, 3]))
         side = float(np.random.choice([-1, 1]))
+        markpen_x = side * np.random.uniform(0.20, 0.26)
+        markpen_y = np.random.uniform(-0.01, 0.05)
 
         self.markpen = create_actor(
             scene=self,
-            pose=sapien.Pose([side * 0.23, 0.02, 0.756], [1, 0, 0, 0]),
+            pose=sapien.Pose([markpen_x, markpen_y, 0.756], [1, 0, 0, 0]),
             modelname="058_markpen",
             model_id=self.markpen_id,
             convex=True,
@@ -35,6 +37,7 @@ class insert_markpen_into_pencup(Base_Task):
         self.add_prohibit_area(self.markpen, padding=0.07)
         self.add_prohibit_area(self.pencup, padding=0.07)
         self.insert_point_id = self._get_insert_point_id()
+        self.task_failure_reason = None
 
     def play_once(self):
         self.set_subtask(0)
@@ -109,14 +112,38 @@ class insert_markpen_into_pencup(Base_Task):
         ).p
         rim_height = self._cup_rim_height()
         pen_axis = pen_pose.to_transformation_matrix()[:3, :3] @ np.array([0, 1, 0])
-        upright = np.dot(pen_axis, [0, 0, 1]) > 0.8
-        inside_xy = np.linalg.norm(insert_point[:2] - cup_pose[:2]) < 0.03
+        vertical_alignment = float(np.dot(pen_axis, [0, 0, 1]))
+        xy_distance = float(np.linalg.norm(insert_point[:2] - cup_pose[:2]))
+        upright = vertical_alignment > 0.8
+        inside_xy = xy_distance < 0.03
         insertion_depth_ok = rim_height - 0.05 < insert_point[2] < rim_height + 0.01
-        return (
-            inside_xy
-            and insertion_depth_ok
-            and upright
-            and self.check_actors_contact("058_markpen", "059_pencup")
-            and self.is_left_gripper_open()
-            and self.is_right_gripper_open()
-        )
+        actors_in_contact = self.check_actors_contact("058_markpen", "059_pencup")
+        left_gripper_open = self.is_left_gripper_open()
+        right_gripper_open = self.is_right_gripper_open()
+
+        failure_reasons = []
+        if not inside_xy:
+            failure_reasons.append(
+                f"insert point is outside pencup opening "
+                f"(xy_distance={xy_distance:.4f}m, required<0.0300m)"
+            )
+        if not insertion_depth_ok:
+            failure_reasons.append(
+                f"insert point depth is invalid "
+                f"(z={insert_point[2]:.4f}m, required "
+                f"{rim_height - 0.05:.4f}m<z<{rim_height + 0.01:.4f}m)"
+            )
+        if not upright:
+            failure_reasons.append(
+                f"markpen is not upright "
+                f"(vertical_alignment={vertical_alignment:.4f}, required>0.8000)"
+            )
+        if not actors_in_contact:
+            failure_reasons.append("markpen is not in contact with pencup")
+        if not left_gripper_open:
+            failure_reasons.append("left gripper is not open")
+        if not right_gripper_open:
+            failure_reasons.append("right gripper is not open")
+
+        self.task_failure_reason = "; ".join(failure_reasons) or None
+        return not failure_reasons

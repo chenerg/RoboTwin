@@ -14,9 +14,11 @@ class balance_globe_on_displaystand(Base_Task):
         side = float(np.random.choice([-1, 1]))
         self.globe_id = int(np.random.choice([2, 3]))
         self.displaystand_id = np.random.randint(0, 5)
+        globe_x = side * np.random.uniform(0.20, 0.26)
+        globe_y = np.random.uniform(-0.01, 0.05)
         self.globe = create_actor(
             scene=self,
-            pose=sapien.Pose([side * 0.23, 0.02, 0.741], [0.5, 0.5, 0.5, 0.5]),
+            pose=sapien.Pose([globe_x, globe_y, 0.741], [0.5, 0.5, 0.5, 0.5]),
             modelname="089_globe",
             model_id=self.globe_id,
             convex=True,

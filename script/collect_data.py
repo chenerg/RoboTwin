@@ -206,8 +206,12 @@ def run(TASK_ENV, args):
                     stage = "check_success"
                     task_success = TASK_ENV.check_success()
                     if not task_success:
-                        print_episode_failure(suc_num, epid, "TASK_SUCCESS_CHECK_FAIL")
-                        save_failed_trajectory(epid, "TASK_SUCCESS_CHECK_FAIL")
+                        failure_reason = "TASK_SUCCESS_CHECK_FAIL"
+                        failure_detail = getattr(TASK_ENV, "task_failure_reason", None)
+                        if failure_detail:
+                            failure_reason = f"{failure_reason}: {failure_detail}"
+                        print_episode_failure(suc_num, epid, failure_reason)
+                        save_failed_trajectory(epid, failure_reason)
                         trajectory_saved = True
                         fail_num += 1
                         failure_counted = True
@@ -336,7 +340,11 @@ def run(TASK_ENV, args):
             if category == "success" and not replay_plan_success:
                 raise RuntimeError("Stored successful trajectory replay reported plan_success=False")
             if category == "success" and not replay_task_success:
-                raise AssertionError("Stored successful trajectory failed its success check")
+                failure_detail = getattr(TASK_ENV, "task_failure_reason", None)
+                message = "Stored successful trajectory failed its success check"
+                if failure_detail:
+                    message = f"{message}: {failure_detail}"
+                raise AssertionError(message)
 
             # An immediate planning failure may not execute an action and therefore
             # may not have written any frames. Preserve at least its initial/final state.

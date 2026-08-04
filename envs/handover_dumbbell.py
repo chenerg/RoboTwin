@@ -13,9 +13,11 @@ class handover_dumbbell(Base_Task):
     def load_actors(self):
         side = float(np.random.choice([-1, 1]))
         self.dumbbell_id = int(np.random.choice([0, 2, 4, 6]))
+        dumbbell_x = side * np.random.uniform(0.18, 0.24)
+        dumbbell_y = np.random.uniform(-0.03, 0.03)
         self.dumbbell = create_actor(
             scene=self,
-            pose=sapien.Pose([side * 0.21, 0.0, 0.77], [0.7071068, 0.7071068, 0, 0]),
+            pose=sapien.Pose([dumbbell_x, dumbbell_y, 0.77], [0.7071068, 0.7071068, 0, 0]),
             modelname="052_dumbbell",
             model_id=self.dumbbell_id,
             convex=True,

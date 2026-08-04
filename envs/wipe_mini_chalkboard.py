@@ -12,9 +12,11 @@ class wipe_mini_chalkboard(Base_Task):
 
     def load_actors(self):
         side = float(np.random.choice([-1, 1]))
+        eraser_x = side * np.random.uniform(0.20, 0.26)
+        eraser_y = np.random.uniform(0.01, 0.07)
         self.eraser = create_actor(
             scene=self,
-            pose=sapien.Pose([side * 0.23, 0.04, 0.76], [1, 0, 0, 0]),
+            pose=sapien.Pose([eraser_x, eraser_y, 0.76], [1, 0, 0, 0]),
             modelname="117_whiteboard-eraser",
             model_id=0,
             convex=True,

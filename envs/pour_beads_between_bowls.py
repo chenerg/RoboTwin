@@ -13,7 +13,9 @@ class pour_beads_between_bowls(Base_Task):
 
     def load_actors(self):
         side = float(np.random.choice([-1, 1]))
-        source_pose = sapien.Pose([side * 0.21, -0.01, 0.741], [0.5, 0.5, 0.5, 0.5])
+        source_x = side * np.random.uniform(0.19, 0.23)
+        source_y = np.random.uniform(-0.03, 0.01)
+        source_pose = sapien.Pose([source_x, source_y, 0.741], [0.5, 0.5, 0.5, 0.5])
         target_pose = sapien.Pose([side * 0.05, -0.14, 0.741], [0.5, 0.5, 0.5, 0.5])
         self.source_bowl = create_actor(
             scene=self,

@@ -17,7 +17,7 @@ class open_then_close_cabinet_drawer(Base_Task):
             modelname=self.model_name,
             modelid=self.model_id,
             xlim=[-0.03, 0.03],
-            ylim=[0.155, 0.155],
+            ylim=[0.145, 0.165],
             rotate_rand=False,
             qpos=[1, 0, 0, 1],
             fix_root_link=True,
