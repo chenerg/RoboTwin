@@ -6,9 +6,9 @@ from .utils import *
 
 class close_laptop(Base_Task):
 
-    INITIAL_JOINT_FRACTION = 0.2
-    MIN_CLOSED_JOINT_FRACTION = 0.3
-    CLOSED_SCREEN_CLEARANCE = 0.08
+    INITIAL_JOINT_FRACTION = 0.5
+    MAX_CLOSED_JOINT_FRACTION = 0.3
+    JOINT_DIRECTION_TOLERANCE = 0.02
 
     def setup_demo(self, **kwargs):
         super()._init_task_env_(**kwargs)
@@ -44,27 +44,32 @@ class close_laptop(Base_Task):
             "{a}": str(self.arm_tag),
         }
 
-        # CP0 and CP2 are on the upper part of the moving screen and remain
-        # reachable while the laptop is open. CP1 is lower on the same link;
-        # moving the held upper point towards it progressively closes the lid.
+        # Reverse open_laptop's CP0 -> CP1 opening motion: grasp CP1 in the
+        # opened state and move the held point towards CP0 to close the lid.
         self.move(
             self.grasp_actor(
                 self.laptop,
                 arm_tag=self.arm_tag,
                 pre_grasp_dis=0.08,
-                contact_point_id=[0, 2],
+                contact_point_id=1,
             )
         )
         if not self.plan_success:
             return self.info
 
+        previous_fraction = self._joint_fraction()
         for _ in range(8):
             if self._is_closed_pose():
                 self.stage_success_tag = True
                 break
-            self.move(self._move_to_screen_contact(contact_point_id=1))
+            self.move(self._move_to_screen_contact(contact_point_id=0))
             if not self.plan_success:
                 break
+            current_fraction = self._joint_fraction()
+            if current_fraction > previous_fraction + self.JOINT_DIRECTION_TOLERANCE:
+                self.plan_success = False
+                break
+            previous_fraction = current_fraction
 
         if self.plan_success and self._is_closed_pose():
             self.stage_success_tag = True
@@ -96,16 +101,8 @@ class close_laptop(Base_Task):
         span = max(float(limit[1] - limit[0]), 1e-6)
         return float((self.laptop.get_qpos()[0] - limit[0]) / span)
 
-    def _screen_height(self):
-        return float(self.laptop.get_contact_point(1, "list")[2])
-
     def _is_closed_pose(self):
-        table_height = 0.74 + self.table_z_bias
-        return (
-            self._joint_fraction() >= self.MIN_CLOSED_JOINT_FRACTION
-            and self._screen_height()
-            <= table_height + self.CLOSED_SCREEN_CLEARANCE
-        )
+        return self._joint_fraction() <= self.MAX_CLOSED_JOINT_FRACTION
 
     def check_success(self):
         if not hasattr(self, "arm_tag"):
