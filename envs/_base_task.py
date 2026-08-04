@@ -114,6 +114,7 @@ class Base_Task(gym.Env):
         self.right_joint_path = kwags.get("right_joint_path", [])
         self.left_cnt = 0
         self.right_cnt = 0
+        self.replay_failure_reason = None
         self.subtask_id = 0
 
         self.instruction = None  # for Eval
@@ -723,6 +724,26 @@ class Base_Task(gym.Env):
 
     # =========================================================== Our APIS ===========================================================
 
+    def _next_stored_joint_path(self, arm_tag):
+        path = self.left_joint_path if arm_tag == "left" else self.right_joint_path
+        counter_name = f"{arm_tag}_cnt"
+        path_idx = getattr(self, counter_name)
+        if path_idx >= len(path):
+            self.plan_success = False
+            self.replay_failure_reason = (
+                f"{arm_tag}_joint_path exhausted at index {path_idx} "
+                f"(stored paths: {len(path)})"
+            )
+            return None
+
+        result = deepcopy(path[path_idx])
+        setattr(self, counter_name, path_idx + 1)
+        if result is None:
+            self.plan_success = False
+            self.replay_failure_reason = f"{arm_tag}_joint_path[{path_idx}] is empty"
+            return None
+        return result
+
     def together_close_gripper(self, save_freq=-1, left_pos=0, right_pos=0):
         left_result, right_result = self.set_gripper(left_pos=left_pos, right_pos=right_pos, set_tag="together")
         control_seq = {
@@ -767,8 +788,9 @@ class Base_Task(gym.Env):
             left_result = self.robot.left_plan_path(pose, constraint_pose=constraint_pose)
             self.left_joint_path.append(deepcopy(left_result))
         else:
-            left_result = deepcopy(self.left_joint_path[self.left_cnt])
-            self.left_cnt += 1
+            left_result = self._next_stored_joint_path("left")
+            if left_result is None:
+                return
 
         if left_result["status"] != "Success":
             self.plan_success = False
@@ -800,8 +822,9 @@ class Base_Task(gym.Env):
             right_result = self.robot.right_plan_path(pose, constraint_pose=constraint_pose)
             self.right_joint_path.append(deepcopy(right_result))
         else:
-            right_result = deepcopy(self.right_joint_path[self.right_cnt])
-            self.right_cnt += 1
+            right_result = self._next_stored_joint_path("right")
+            if right_result is None:
+                return
 
         if right_result["status"] != "Success":
             self.plan_success = False
@@ -839,10 +862,12 @@ class Base_Task(gym.Env):
             self.left_joint_path.append(deepcopy(left_result))
             self.right_joint_path.append(deepcopy(right_result))
         else:
-            left_result = deepcopy(self.left_joint_path[self.left_cnt])
-            right_result = deepcopy(self.right_joint_path[self.right_cnt])
-            self.left_cnt += 1
-            self.right_cnt += 1
+            left_result = self._next_stored_joint_path("left")
+            if left_result is None:
+                return
+            right_result = self._next_stored_joint_path("right")
+            if right_result is None:
+                return
 
         try:
             left_success = left_result["status"] == "Success"

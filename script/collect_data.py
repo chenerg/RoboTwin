@@ -350,6 +350,9 @@ def run(TASK_ENV, args):
             }
             if failure_reason is not None:
                 metadata["failure_reason"] = failure_reason
+            replay_failure_reason = getattr(TASK_ENV, "replay_failure_reason", None)
+            if replay_failure_reason is not None:
+                metadata["replay_failure_reason"] = replay_failure_reason
             if replay_error is not None:
                 metadata["replay_error"] = replay_error
 
