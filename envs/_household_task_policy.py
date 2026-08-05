@@ -65,14 +65,26 @@ class HouseholdPolicy(Base_Task):
             actor.set_mass(0.04)
         return actor, model_name, model_id
 
-    def _pick_place_root(self, actor, arm_tag, target_pose, stage_prefix):
+    def _pick_place_root(
+        self,
+        actor,
+        arm_tag,
+        target_pose,
+        stage_prefix,
+        *,
+        lift_height=0.11,
+        place_pre_dis=0.08,
+        place_dis=0.005,
+        retreat_height=0.07,
+        return_to_origin=False,
+    ):
         self.run_action_stage(
             f"{stage_prefix}_grasp",
             lambda: self.grasp_actor(actor, arm_tag=arm_tag, pre_grasp_dis=0.1),
         )
         self.run_action_stage(
             f"{stage_prefix}_lift",
-            lambda: self.move_by_displacement(arm_tag, z=0.11),
+            lambda: self.move_by_displacement(arm_tag, z=lift_height),
         )
         self.run_action_stage(
             f"{stage_prefix}_place",
@@ -80,15 +92,20 @@ class HouseholdPolicy(Base_Task):
                 actor,
                 arm_tag=arm_tag,
                 target_pose=target_pose,
-                pre_dis=0.08,
-                dis=0.005,
+                pre_dis=place_pre_dis,
+                dis=place_dis,
                 constrain="free",
             ),
         )
         self.run_action_stage(
             f"{stage_prefix}_retreat",
-            lambda: self.move_by_displacement(arm_tag, z=0.07),
+            lambda: self.move_by_displacement(arm_tag, z=retreat_height),
         )
+        if return_to_origin:
+            self.run_action_stage(
+                f"{stage_prefix}_return_to_origin",
+                lambda: self.back_to_origin(arm_tag),
+            )
 
 
 class SwapHouseholdObjectsPolicy(HouseholdPolicy):
@@ -121,8 +138,12 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
         self.object_b_goal = sapien.Pose(
             [a_pose.p[0], a_pose.p[1], b_pose.p[2]], b_pose.q
         )
+        # Keep the temporary slot away from the robot midline.  The previous
+        # x=+-0.09 slot forced the active arm to fold inward while preserving
+        # its grasp transform, which frequently made the place IK candidate
+        # self-colliding.  This outer slot stays in the same arm's workspace.
         self.staging_pose = sapien.Pose(
-            [side * 0.09, -0.045, a_pose.p[2]], a_pose.q
+            [side * 0.285, -0.045, a_pose.p[2]], a_pose.q
         )
 
         self.add_prohibit_area(self.object_a, padding=0.07)
@@ -140,15 +161,38 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
     def play_once(self):
         self.set_subtask(0)
         self._pick_place_root(
-            self.object_a, self.arm_tag, self.staging_pose, "move_first_object_to_staging"
+            self.object_a,
+            self.arm_tag,
+            self.staging_pose,
+            "move_first_object_to_staging",
+            lift_height=0.16,
+            place_pre_dis=0.12,
+            place_dis=0.02,
+            retreat_height=0.1,
+            return_to_origin=True,
         )
         self.set_subtask(1)
         self._pick_place_root(
-            self.object_b, self.arm_tag, self.object_b_goal, "move_second_object_to_first_spot"
+            self.object_b,
+            self.arm_tag,
+            self.object_b_goal,
+            "move_second_object_to_first_spot",
+            lift_height=0.16,
+            place_pre_dis=0.12,
+            place_dis=0.02,
+            retreat_height=0.1,
+            return_to_origin=True,
         )
         self.set_subtask(2)
         self._pick_place_root(
-            self.object_a, self.arm_tag, self.object_a_goal, "move_first_object_to_second_spot"
+            self.object_a,
+            self.arm_tag,
+            self.object_a_goal,
+            "move_first_object_to_second_spot",
+            lift_height=0.16,
+            place_pre_dis=0.12,
+            place_dis=0.02,
+            retreat_height=0.1,
         )
         self.info["info"] = {
             "{A}": _asset_info(self.object_a_name, self.object_a_id),
