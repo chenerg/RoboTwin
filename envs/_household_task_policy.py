@@ -75,6 +75,7 @@ class HouseholdPolicy(Base_Task):
         lift_height=0.11,
         place_pre_dis=0.08,
         place_dis=0.005,
+        place_constrain="free",
         retreat_height=0.07,
         return_to_origin=False,
     ):
@@ -94,7 +95,7 @@ class HouseholdPolicy(Base_Task):
                 target_pose=target_pose,
                 pre_dis=place_pre_dis,
                 dis=place_dis,
-                constrain="free",
+                constrain=place_constrain,
             ),
         )
         self.run_action_stage(
@@ -109,7 +110,7 @@ class HouseholdPolicy(Base_Task):
 
 
 class SwapHouseholdObjectsPolicy(HouseholdPolicy):
-    """Swap objects across the table through a shared raised relay platform."""
+    """Swap objects across the table through two bare-table relay poses."""
 
     object_a_spec = None
     object_b_spec = None
@@ -143,30 +144,21 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
             [0.285, -0.14, b_pose.p[2]], b_pose.q
         )
 
-        # Both arms use this raised front-center platform sequentially.  It
-        # avoids cross-body placements and also supports objects such as the
-        # bell that expose only one grasp point, so a direct handover would be
-        # under-constrained or gripper-to-gripper colliding.
-        platform_center_z = 0.781 + self.table_z_bias
-        self.transfer_platform = create_box(
-            scene=self.scene,
-            pose=sapien.Pose([0.0, -0.16, platform_center_z], [1, 0, 0, 0]),
-            half_size=(0.085, 0.065, 0.04),
-            color=(0.55, 0.55, 0.55),
-            is_static=True,
-            name="swap_transfer_platform",
-        )
-        platform_height = 0.08
+        # Relay on the bare table instead of introducing an extra collision
+        # body.  Each giver crosses the center line only slightly, leaving the
+        # object in the receiving arm's near-center workspace.  This mirrors
+        # the proven +/-0.1 m center workspace used by place_a2b tasks while
+        # avoiding a simultaneous two-gripper handover (some assets expose
+        # only one grasp point).
         self.object_a_transfer_pose = sapien.Pose(
-            [0.0, -0.16, a_pose.p[2] + platform_height], a_pose.q
+            [0.06, -0.16, a_pose.p[2]], a_pose.q
         )
         self.object_b_transfer_pose = sapien.Pose(
-            [0.0, -0.16, b_pose.p[2] + platform_height], b_pose.q
+            [-0.06, -0.16, b_pose.p[2]], b_pose.q
         )
 
         self.add_prohibit_area(self.object_a, padding=0.07)
         self.add_prohibit_area(self.object_b, padding=0.07)
-        self.add_prohibit_area(self.transfer_platform, padding=0.04)
         staging_padding = 0.055
         self.prohibited_area.append(
             [
@@ -185,24 +177,26 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
             self.right_arm,
             self.staging_pose,
             "move_right_object_to_staging",
-            lift_height=0.16,
-            place_pre_dis=0.12,
+            lift_height=0.12,
+            place_pre_dis=0.1,
             place_dis=0.02,
-            retreat_height=0.1,
+            place_constrain="auto",
+            retreat_height=0.08,
             return_to_origin=True,
         )
 
-        # Relay A from the left arm to the right arm through the platform.
+        # Relay A through a bare-table pose slightly inside the right side.
         self.set_subtask(1)
         self._pick_place_root(
             self.object_a,
             self.left_arm,
             self.object_a_transfer_pose,
-            "relay_left_object_to_center",
-            lift_height=0.18,
-            place_pre_dis=0.12,
+            "relay_left_object_to_right_slot",
+            lift_height=0.12,
+            place_pre_dis=0.1,
             place_dis=0.02,
-            retreat_height=0.1,
+            place_constrain="auto",
+            retreat_height=0.08,
             return_to_origin=True,
         )
         self.set_subtask(2)
@@ -212,23 +206,25 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
             self.object_a_goal,
             "move_left_object_to_right_spot",
             lift_height=0.12,
-            place_pre_dis=0.12,
+            place_pre_dis=0.1,
             place_dis=0.02,
-            retreat_height=0.1,
+            place_constrain="auto",
+            retreat_height=0.08,
             return_to_origin=True,
         )
 
-        # Relay B in the opposite direction after A reaches the right side.
+        # Relay B through the mirrored left-side pose after A is out of the way.
         self.set_subtask(3)
         self._pick_place_root(
             self.object_b,
             self.right_arm,
             self.object_b_transfer_pose,
-            "relay_right_object_to_center",
-            lift_height=0.18,
-            place_pre_dis=0.12,
+            "relay_right_object_to_left_slot",
+            lift_height=0.12,
+            place_pre_dis=0.1,
             place_dis=0.02,
-            retreat_height=0.1,
+            place_constrain="auto",
+            retreat_height=0.08,
             return_to_origin=True,
         )
         self.set_subtask(4)
@@ -238,9 +234,10 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
             self.object_b_goal,
             "move_right_object_to_left_spot",
             lift_height=0.12,
-            place_pre_dis=0.12,
+            place_pre_dis=0.1,
             place_dis=0.02,
-            retreat_height=0.1,
+            place_constrain="auto",
+            retreat_height=0.08,
         )
         self.info["info"] = {
             "{A}": _asset_info(self.object_a_name, self.object_a_id),
