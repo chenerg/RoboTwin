@@ -72,6 +72,7 @@ class HouseholdPolicy(Base_Task):
         target_pose,
         stage_prefix,
         *,
+        grasp_pre_dis=0.1,
         lift_height=0.11,
         place_pre_dis=0.08,
         place_dis=0.005,
@@ -81,7 +82,11 @@ class HouseholdPolicy(Base_Task):
     ):
         self.run_action_stage(
             f"{stage_prefix}_grasp",
-            lambda: self.grasp_actor(actor, arm_tag=arm_tag, pre_grasp_dis=0.1),
+            lambda: self.grasp_actor(
+                actor,
+                arm_tag=arm_tag,
+                pre_grasp_dis=grasp_pre_dis,
+            ),
         )
         self.run_action_stage(
             f"{stage_prefix}_lift",
@@ -114,6 +119,12 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
 
     object_a_spec = None
     object_b_spec = None
+    object_a_grasp_pre_dis = 0.1
+    object_a_lift_height = 0.12
+    object_a_place_pre_dis = 0.1
+    object_a_place_dis = 0.02
+    object_a_place_constrain = "auto"
+    object_a_target_quaternion = None
 
     def load_actors(self):
         pose_a = _pose(-0.22, 0.03)
@@ -132,8 +143,13 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
 
         a_pose = self.object_a.get_pose()
         b_pose = self.object_b.get_pose()
+        object_a_target_q = (
+            a_pose.q
+            if self.object_a_target_quaternion is None
+            else self.object_a_target_quaternion
+        )
         self.object_a_goal = sapien.Pose(
-            [b_pose.p[0], b_pose.p[1], a_pose.p[2]], a_pose.q
+            [b_pose.p[0], b_pose.p[1], a_pose.p[2]], object_a_target_q
         )
         self.object_b_goal = sapien.Pose(
             [a_pose.p[0], a_pose.p[1], b_pose.p[2]], b_pose.q
@@ -151,7 +167,7 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
         # avoiding a simultaneous two-gripper handover (some assets expose
         # only one grasp point).
         self.object_a_transfer_pose = sapien.Pose(
-            [0.06, -0.16, a_pose.p[2]], a_pose.q
+            [0.06, -0.16, a_pose.p[2]], object_a_target_q
         )
         self.object_b_transfer_pose = sapien.Pose(
             [-0.06, -0.16, b_pose.p[2]], b_pose.q
@@ -192,10 +208,11 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
             self.left_arm,
             self.object_a_transfer_pose,
             "relay_left_object_to_right_slot",
-            lift_height=0.12,
-            place_pre_dis=0.1,
-            place_dis=0.02,
-            place_constrain="auto",
+            grasp_pre_dis=self.object_a_grasp_pre_dis,
+            lift_height=self.object_a_lift_height,
+            place_pre_dis=self.object_a_place_pre_dis,
+            place_dis=self.object_a_place_dis,
+            place_constrain=self.object_a_place_constrain,
             retreat_height=0.08,
             return_to_origin=True,
         )
@@ -205,10 +222,11 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
             self.right_arm,
             self.object_a_goal,
             "move_left_object_to_right_spot",
-            lift_height=0.12,
-            place_pre_dis=0.1,
-            place_dis=0.02,
-            place_constrain="auto",
+            grasp_pre_dis=self.object_a_grasp_pre_dis,
+            lift_height=self.object_a_lift_height,
+            place_pre_dis=self.object_a_place_pre_dis,
+            place_dis=self.object_a_place_dis,
+            place_constrain=self.object_a_place_constrain,
             retreat_height=0.08,
             return_to_origin=True,
         )
