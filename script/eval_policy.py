@@ -126,8 +126,11 @@ def main(usr_args):
 
     if args["eval_video_log"]:
         video_save_dir = save_dir
-        camera_config = get_camera_config(args["camera"]["head_camera_type"])
-        video_size = str(camera_config["w"]) + "x" + str(camera_config["h"])
+        if args["data_type"].get("third_view", False):
+            video_size = "320x240"  # observer camera is hardcoded 320x240 (envs/camera/camera.py)
+        else:
+            camera_config = get_camera_config(args["camera"]["head_camera_type"])
+            video_size = str(camera_config["w"]) + "x" + str(camera_config["h"])
         video_save_dir.mkdir(parents=True, exist_ok=True)
         args["eval_video_save_dir"] = video_save_dir
 
