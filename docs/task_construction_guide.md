@@ -566,11 +566,11 @@ bash collect_new_tasks_data.sh demo_clean 0 --dry-run
 
 | 类型 | Task | 新任务语义 | 步数 |
 |---|---|---|---:|
-| 三步交换 | `swap_mouse_and_stapler` | 借助临时空位完整交换 mouse 与 stapler 的初始位置 | 1000 |
-| 三步交换 | `swap_phone_and_remotecontrol` | 完整交换 phone 与 remote control 的初始位置 | 1000 |
-| 三步交换 | `swap_bell_and_rubikscube` | 完整交换 bell 与 Rubik's cube 的初始位置 | 1000 |
-| 三步交换 | `swap_toycar_and_playingcards` | 完整交换 toycar 与 playing cards 的初始位置 | 1000 |
-| 三步交换 | `swap_tea_box_and_coffee_box` | 完整交换 tea box 与 coffee box 的初始位置 | 1000 |
+| 双臂跨侧交换 | `swap_mouse_and_stapler` | mouse 左置、stapler 右置，经中央中转台交换两侧位置 | 1800 |
+| 双臂跨侧交换 | `swap_phone_and_remotecontrol` | phone 左置、remote control 右置，经中央中转台交换 | 1800 |
+| 双臂跨侧交换 | `swap_bell_and_rubikscube` | bell 左置、Rubik's cube 右置，经中央中转台交换 | 1800 |
+| 双臂跨侧交换 | `swap_toycar_and_playingcards` | toycar 左置、playing cards 右置，经中央中转台交换 | 1800 |
+| 双臂跨侧交换 | `swap_tea_box_and_coffee_box` | tea box 左置、coffee box 右置，经中央中转台交换 | 1800 |
 | 异构排序 | `arrange_mouse_bell_stapler` | 按 mouse、bell、stapler 的语义顺序由前向后排列 | 1000 |
 | 异构排序 | `arrange_phone_remotecontrol_toycar` | 按 phone、remote、toycar 的语义顺序排列 | 1000 |
 | 异构排序 | `arrange_bread_soap_rubikscube` | 按 bread、soap、cube 的语义顺序排列 | 1000 |
@@ -582,7 +582,7 @@ bash collect_new_tasks_data.sh demo_clean 0 --dry-run
 | 双目标放置 | `place_tea_coffee_boxes_in_basket` | 把 tea/coffee box 放入 basket 的两个位置 | 800 |
 | 双目标放置 | `place_bread_can_on_tray` | 把 bread 与 can 分别放到 tray 两侧 | 700 |
 
-交换任务与现有单次相对放置不同：必须保留两个初始位置，通过“物体 A 到暂存位、物体 B 到 A 原位、物体 A 到 B 原位”三个 subtask 完成闭环。异构排序任务不同于已有的同形 block 颜色/尺寸排序，要求模型区分三种不同类别的家庭物体。双目标任务则固定了新的跨类别 source-target 组合，并对两个目标同时判定。
+交换任务与现有单次相对放置不同：物体 A 固定从左侧开始、物体 B 固定从右侧开始。策略先把 B 移到右侧暂存位，再通过中央高位中转台依次完成“A 由左臂转交右臂并放到右侧”和“B 由右臂转交左臂并放到左侧”，共五个 subtask。两只机械臂不会直接交叉，也不要求物体具有两组 handover 抓取点。异构排序任务不同于已有的同形 block 颜色/尺寸排序，要求模型区分三种不同类别的家庭物体。双目标任务则固定了新的跨类别 source-target 组合，并对两个目标同时判定。
 
 ## 11. 维护建议
 

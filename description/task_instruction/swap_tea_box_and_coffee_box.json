@@ -1,9 +1,9 @@
 {
-  "full_description": "swap the positions of the tea box and the coffee box",
-  "schema": "{A} is the tea box, {B} is the coffee box, and {a} is the arm used",
-  "preference": "Preserve the two-object position-swap meaning.",
+  "full_description": "swap the left-side tea box and the right-side coffee box",
+  "schema": "{A} starts on the left, {B} starts on the right, and {a}/{b} are the left/right arms",
+  "preference": "Preserve the cross-table position-swap meaning.",
   "seen": [
-    "Use {a} to swap the positions of {A} and {B}.",
+    "Use {a} and {b} to swap the positions of {A} and {B}.",
     "Exchange the starting table locations of {A} and {B}.",
     "Put {A} where {B} started and {B} where {A} started."
   ],

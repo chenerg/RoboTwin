@@ -109,16 +109,14 @@ class HouseholdPolicy(Base_Task):
 
 
 class SwapHouseholdObjectsPolicy(HouseholdPolicy):
-    """Swap two objects on one side of the table via a free staging spot."""
+    """Swap objects across the table through a shared raised relay platform."""
 
     object_a_spec = None
     object_b_spec = None
 
     def load_actors(self):
-        side = int(np.random.choice([-1, 1]))
-        x = side * 0.2
-        pose_a = _pose(x, 0.045)
-        pose_b = _pose(x, -0.145)
+        pose_a = _pose(-0.22, 0.03)
+        pose_b = _pose(0.22, 0.03)
 
         self.object_a, self.object_a_name, self.object_a_id = self._create_object(
             self.object_a_spec, pose_a
@@ -128,7 +126,8 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
         )
         self.object_a.set_name("swap_object_a")
         self.object_b.set_name("swap_object_b")
-        self.arm_tag = ArmTag("left" if side < 0 else "right")
+        self.left_arm = ArmTag("left")
+        self.right_arm = ArmTag("right")
 
         a_pose = self.object_a.get_pose()
         b_pose = self.object_b.get_pose()
@@ -138,16 +137,36 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
         self.object_b_goal = sapien.Pose(
             [a_pose.p[0], a_pose.p[1], b_pose.p[2]], b_pose.q
         )
-        # Keep the temporary slot away from the robot midline.  The previous
-        # x=+-0.09 slot forced the active arm to fold inward while preserving
-        # its grasp transform, which frequently made the place IK candidate
-        # self-colliding.  This outer slot stays in the same arm's workspace.
+        # Move B out of its destination before relaying A.  The slot remains
+        # completely inside the right arm workspace.
         self.staging_pose = sapien.Pose(
-            [side * 0.285, -0.045, a_pose.p[2]], a_pose.q
+            [0.285, -0.14, b_pose.p[2]], b_pose.q
+        )
+
+        # Both arms use this raised front-center platform sequentially.  It
+        # avoids cross-body placements and also supports objects such as the
+        # bell that expose only one grasp point, so a direct handover would be
+        # under-constrained or gripper-to-gripper colliding.
+        platform_center_z = 0.781 + self.table_z_bias
+        self.transfer_platform = create_box(
+            scene=self.scene,
+            pose=sapien.Pose([0.0, -0.16, platform_center_z], [1, 0, 0, 0]),
+            half_size=(0.085, 0.065, 0.04),
+            color=(0.55, 0.55, 0.55),
+            is_static=True,
+            name="swap_transfer_platform",
+        )
+        platform_height = 0.08
+        self.object_a_transfer_pose = sapien.Pose(
+            [0.0, -0.16, a_pose.p[2] + platform_height], a_pose.q
+        )
+        self.object_b_transfer_pose = sapien.Pose(
+            [0.0, -0.16, b_pose.p[2] + platform_height], b_pose.q
         )
 
         self.add_prohibit_area(self.object_a, padding=0.07)
         self.add_prohibit_area(self.object_b, padding=0.07)
+        self.add_prohibit_area(self.transfer_platform, padding=0.04)
         staging_padding = 0.055
         self.prohibited_area.append(
             [
@@ -159,25 +178,28 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
         )
 
     def play_once(self):
+        # Free the right-side destination before moving A across the table.
         self.set_subtask(0)
         self._pick_place_root(
-            self.object_a,
-            self.arm_tag,
+            self.object_b,
+            self.right_arm,
             self.staging_pose,
-            "move_first_object_to_staging",
+            "move_right_object_to_staging",
             lift_height=0.16,
             place_pre_dis=0.12,
             place_dis=0.02,
             retreat_height=0.1,
             return_to_origin=True,
         )
+
+        # Relay A from the left arm to the right arm through the platform.
         self.set_subtask(1)
         self._pick_place_root(
-            self.object_b,
-            self.arm_tag,
-            self.object_b_goal,
-            "move_second_object_to_first_spot",
-            lift_height=0.16,
+            self.object_a,
+            self.left_arm,
+            self.object_a_transfer_pose,
+            "relay_left_object_to_center",
+            lift_height=0.18,
             place_pre_dis=0.12,
             place_dis=0.02,
             retreat_height=0.1,
@@ -186,10 +208,36 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
         self.set_subtask(2)
         self._pick_place_root(
             self.object_a,
-            self.arm_tag,
+            self.right_arm,
             self.object_a_goal,
-            "move_first_object_to_second_spot",
-            lift_height=0.16,
+            "move_left_object_to_right_spot",
+            lift_height=0.12,
+            place_pre_dis=0.12,
+            place_dis=0.02,
+            retreat_height=0.1,
+            return_to_origin=True,
+        )
+
+        # Relay B in the opposite direction after A reaches the right side.
+        self.set_subtask(3)
+        self._pick_place_root(
+            self.object_b,
+            self.right_arm,
+            self.object_b_transfer_pose,
+            "relay_right_object_to_center",
+            lift_height=0.18,
+            place_pre_dis=0.12,
+            place_dis=0.02,
+            retreat_height=0.1,
+            return_to_origin=True,
+        )
+        self.set_subtask(4)
+        self._pick_place_root(
+            self.object_b,
+            self.left_arm,
+            self.object_b_goal,
+            "move_right_object_to_left_spot",
+            lift_height=0.12,
             place_pre_dis=0.12,
             place_dis=0.02,
             retreat_height=0.1,
@@ -197,7 +245,8 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
         self.info["info"] = {
             "{A}": _asset_info(self.object_a_name, self.object_a_id),
             "{B}": _asset_info(self.object_b_name, self.object_b_id),
-            "{a}": str(self.arm_tag),
+            "{a}": str(self.left_arm),
+            "{b}": str(self.right_arm),
         }
         return self.info
 
