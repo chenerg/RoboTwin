@@ -1408,7 +1408,7 @@ class Base_Task(gym.Env):
             target_pose_mat = transforms._toPose(target_pose).to_transformation_matrix()
             if pre_dis_axis == "fp":
                 pre_dis_axis = [0.0, 0.0, 1.0]
-            pre_dis_axis = np.array(pre_dis_axis)
+            pre_dis_axis = np.array(pre_dis_axis, dtype=np.float64)
             pre_dis_axis /= np.linalg.norm(pre_dis_axis)
             target_dis_vec = (target_pose_mat[:3, :3] @ np.array(pre_dis_axis).reshape(3, 1)).reshape(3)
             target_dis_vec /= np.linalg.norm(target_dis_vec)
