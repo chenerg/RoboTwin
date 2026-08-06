@@ -1,9 +1,10 @@
 """Swap a mouse and a stapler across the table.
 
 Self-contained expert policy (no dependency on _household_task_policy).
-Direct 3-move choreography: stage the mouse, move the stapler straight into
-the mouse's original spot, then drop the mouse into the stapler's spot.
-Both objects are placed flat (z-up target quaternion) with free yaw.
+Center-line relay choreography: each arm stays in its own half of the table
+and hands objects across at the x=0 center line, keeping every target inside
+the head camera view.  Both objects are placed flat (z-up target quaternion)
+with free yaw.
 """
 
 from pathlib import Path
@@ -54,9 +55,11 @@ class swap_mouse_and_stapler(Base_Task):
     object_a_place_constrain = "free"
     object_a_target_quaternion = (0, 0, 0, 1)
 
-    # Central staging slot: reachable by both arms and well inside the head
-    # camera view (the default right-edge slot sits at the FOV boundary).
-    staging_xy = (0.0, -0.14)
+    # Center-line relay slots: reached by both arms at x=0 so neither arm
+    # leaves its own half, and well inside the head camera view.  The mouse
+    # relays at the front slot, the stapler at the back slot.
+    mouse_relay_xy = (0.0, -0.16)
+    stapler_relay_xy = (0.0, -0.04)
 
     def setup_demo(self, **kwags):
         super()._init_task_env_(**kwags)
@@ -102,17 +105,27 @@ class swap_mouse_and_stapler(Base_Task):
             [a_pose.p[0], a_pose.p[1], b_pose.p[2]], (0, 0, 0, 1)
         )
 
+        self.mouse_relay_pose = sapien.Pose(
+            [self.mouse_relay_xy[0], self.mouse_relay_xy[1], a_pose.p[2]],
+            self.object_a_target_quaternion,
+        )
+        self.stapler_relay_pose = sapien.Pose(
+            [self.stapler_relay_xy[0], self.stapler_relay_xy[1], b_pose.p[2]],
+            (0, 0, 0, 1),
+        )
+
         self.add_prohibit_area(self.object_a, padding=0.07)
         self.add_prohibit_area(self.object_b, padding=0.07)
-        staging_padding = 0.055
-        self.prohibited_area.append(
-            [
-                self.staging_xy[0] - staging_padding,
-                self.staging_xy[1] - staging_padding,
-                self.staging_xy[0] + staging_padding,
-                self.staging_xy[1] + staging_padding,
-            ]
-        )
+        for relay_xy in (self.mouse_relay_xy, self.stapler_relay_xy):
+            relay_padding = 0.055
+            self.prohibited_area.append(
+                [
+                    relay_xy[0] - relay_padding,
+                    relay_xy[1] - relay_padding,
+                    relay_xy[0] + relay_padding,
+                    relay_xy[1] + relay_padding,
+                ]
+            )
 
     def _pick_place_root(
         self,
@@ -183,21 +196,24 @@ class swap_mouse_and_stapler(Base_Task):
             self.move(self.back_to_origin(arm_tag))
 
     def play_once(self):
-        # Direct 3-move swap, mouse first: stage the mouse out of its slot,
-        # move the stapler straight into the mouse's original spot, then drop
-        # the mouse into the stapler's original spot.
-        a_pose = self.object_a.get_pose()
-        staging_pose_a = sapien.Pose(
-            [self.staging_xy[0], self.staging_xy[1], a_pose.p[2]],
-            self.object_a_target_quaternion,
+        # Center-line relay: the right arm clears the stapler to the back
+        # relay, the left arm drops the mouse at the front relay, then the
+        # right arm carries the mouse home and the left arm carries the
+        # stapler home.  No arm crosses the x=0 center line.
+        self.set_subtask(0)
+        self._relocate_object_b(
+            self.right_arm,
+            self.stapler_relay_pose,
+            "move_stapler_to_relay",
+            return_to_origin=True,
         )
 
-        self.set_subtask(0)
+        self.set_subtask(1)
         self._pick_place_root(
             self.object_a,
             self.left_arm,
-            staging_pose_a,
-            "move_mouse_to_staging",
+            self.mouse_relay_pose,
+            "move_mouse_to_relay",
             grasp_pre_dis=self.object_a_grasp_pre_dis,
             lift_height=self.object_a_lift_height,
             place_pre_dis=self.object_a_place_pre_dis,
@@ -207,18 +223,10 @@ class swap_mouse_and_stapler(Base_Task):
             return_to_origin=True,
         )
 
-        self.set_subtask(1)
-        self._relocate_object_b(
-            self.right_arm,
-            self.object_b_goal,
-            "move_stapler_to_mouse_spot",
-            return_to_origin=True,
-        )
-
         self.set_subtask(2)
         self._pick_place_root(
             self.object_a,
-            self.left_arm,
+            self.right_arm,
             self.object_a_goal,
             "move_mouse_to_stapler_spot",
             grasp_pre_dis=self.object_a_grasp_pre_dis,
@@ -227,6 +235,14 @@ class swap_mouse_and_stapler(Base_Task):
             place_dis=self.object_a_place_dis,
             place_constrain=self.object_a_place_constrain,
             retreat_height=0.08,
+            return_to_origin=True,
+        )
+
+        self.set_subtask(3)
+        self._relocate_object_b(
+            self.left_arm,
+            self.object_b_goal,
+            "move_stapler_to_mouse_spot",
         )
 
         self.info["info"] = {
