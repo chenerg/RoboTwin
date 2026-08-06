@@ -185,19 +185,32 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
             ]
         )
 
-    def play_once(self):
-        # Free the right-side destination before moving A across the table.
-        self.set_subtask(0)
+    def _relocate_object_b(self, arm_tag, target_pose, stage_prefix, *, return_to_origin=False):
+        """Move object B through a grasp-lift-place-retreat cycle.
+
+        Subclasses may override to change the grasp/lift style for their
+        specific object B (e.g. swap_mouse_and_stapler).
+        """
         self._pick_place_root(
             self.object_b,
-            self.right_arm,
-            self.staging_pose,
-            "move_right_object_to_staging",
+            arm_tag,
+            target_pose,
+            stage_prefix,
             lift_height=0.12,
             place_pre_dis=0.1,
             place_dis=0.02,
             place_constrain="auto",
             retreat_height=0.08,
+            return_to_origin=return_to_origin,
+        )
+
+    def play_once(self):
+        # Free the right-side destination before moving A across the table.
+        self.set_subtask(0)
+        self._relocate_object_b(
+            self.right_arm,
+            self.staging_pose,
+            "move_right_object_to_staging",
             return_to_origin=True,
         )
 
@@ -233,29 +246,17 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
 
         # Relay B through the mirrored left-side pose after A is out of the way.
         self.set_subtask(3)
-        self._pick_place_root(
-            self.object_b,
+        self._relocate_object_b(
             self.right_arm,
             self.object_b_transfer_pose,
             "relay_right_object_to_left_slot",
-            lift_height=0.12,
-            place_pre_dis=0.1,
-            place_dis=0.02,
-            place_constrain="auto",
-            retreat_height=0.08,
             return_to_origin=True,
         )
         self.set_subtask(4)
-        self._pick_place_root(
-            self.object_b,
+        self._relocate_object_b(
             self.left_arm,
             self.object_b_goal,
             "move_right_object_to_left_spot",
-            lift_height=0.12,
-            place_pre_dis=0.1,
-            place_dis=0.02,
-            place_constrain="auto",
-            retreat_height=0.08,
         )
         self.info["info"] = {
             "{A}": _asset_info(self.object_a_name, self.object_a_id),
