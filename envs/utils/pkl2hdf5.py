@@ -81,8 +81,13 @@ def pkl_files_to_hdf5_and_video(pkl_files, hdf5_path, video_path):
         pkl_file = load_pkl_file(pkl_file_path)
         append_data_to_structure(data_list, pkl_file)
 
-    frames = data_list.get("third_view_rgb") or data_list["observation"]["head_camera"]["rgb"]
-    images_to_video(np.array(frames), out_path=video_path)
+    images_to_video(np.array(data_list["observation"]["head_camera"]["rgb"]), out_path=video_path)
+
+    if "third_view_rgb" in data_list:
+        images_to_video(
+            np.array(data_list["third_view_rgb"]),
+            out_path=video_path.replace(".mp4", "_third_view.mp4"),
+        )
 
     with h5py.File(hdf5_path, "w") as f:
         create_hdf5_from_dict(f, data_list)
