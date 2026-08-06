@@ -100,6 +100,7 @@ class Base_Task(gym.Env):
         self.now_obs = {}
         self.take_action_cnt = 0
         self.eval_video_path = kwags.get("eval_video_save_dir", None)
+        self.eval_video_ffmpeg_third = None
 
         self.save_freq = kwags.get("save_freq")
         self.world_pcd = None
@@ -593,8 +594,9 @@ class Base_Task(gym.Env):
         self.left_joint_path = args.get("left_joint_path", [])
         self.right_joint_path = args.get("right_joint_path", [])
 
-    def _set_eval_video_ffmpeg(self, ffmpeg):
+    def _set_eval_video_ffmpeg(self, ffmpeg, ffmpeg_third=None):
         self.eval_video_ffmpeg = ffmpeg
+        self.eval_video_ffmpeg_third = ffmpeg_third
 
     def close_env(self, clear_cache=False):
         if clear_cache:
@@ -604,10 +606,18 @@ class Base_Task(gym.Env):
         self.close()
 
     def _del_eval_video_ffmpeg(self):
-        if self.eval_video_ffmpeg:
-            self.eval_video_ffmpeg.stdin.close()
-            self.eval_video_ffmpeg.wait()
-            del self.eval_video_ffmpeg
+        for attr in ("eval_video_ffmpeg", "eval_video_ffmpeg_third"):
+            f = getattr(self, attr, None)
+            if f:
+                f.stdin.close()
+                f.wait()
+            setattr(self, attr, None)
+
+    def _write_eval_video_frames(self):
+        if getattr(self, "eval_video_ffmpeg", None):
+            self.eval_video_ffmpeg.stdin.write(self.now_obs["observation"]["head_camera"]["rgb"].tobytes())
+        if self.eval_video_ffmpeg_third:
+            self.eval_video_ffmpeg_third.stdin.write(self.now_obs["third_view_rgb"].tobytes())
 
     def delay(self, delay_time, save_freq=None):
         render_freq = self.render_freq
@@ -1592,8 +1602,7 @@ class Base_Task(gym.Env):
 
         eval_video_freq = 1  # fixed
         if (self.eval_video_path is not None and self.take_action_cnt % eval_video_freq == 0):
-            frame = self.now_obs["third_view_rgb"] if self.data_type.get("third_view") else self.now_obs["observation"]["head_camera"]["rgb"]
-            self.eval_video_ffmpeg.stdin.write(frame.tobytes())
+            self._write_eval_video_frames()
 
         self.take_action_cnt += 1
         print(f"step: \033[92m{self.take_action_cnt} / {self.step_lim}\033[0m", end="\r")
@@ -1769,8 +1778,7 @@ class Base_Task(gym.Env):
                 self.eval_success = True
                 self.get_obs() # update obs
                 if (self.eval_video_path is not None):
-                    frame = self.now_obs["third_view_rgb"] if self.data_type.get("third_view") else self.now_obs["observation"]["head_camera"]["rgb"]
-                    self.eval_video_ffmpeg.stdin.write(frame.tobytes())
+                    self._write_eval_video_frames()
                 return
 
         self._update_render()

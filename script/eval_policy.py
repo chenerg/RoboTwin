@@ -61,6 +61,35 @@ def get_embodiment_config(robot_file):
     return embodiment_args
 
 
+def _create_video_ffmpeg(video_size, out_path):
+    return subprocess.Popen(
+        [
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-f",
+            "rawvideo",
+            "-pixel_format",
+            "rgb24",
+            "-video_size",
+            video_size,
+            "-framerate",
+            "10",
+            "-i",
+            "-",
+            "-pix_fmt",
+            "yuv420p",
+            "-vcodec",
+            "libx264",
+            "-crf",
+            "23",
+            out_path,
+        ],
+        stdin=subprocess.PIPE,
+    )
+
+
 def main(usr_args):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     task_name = usr_args["task_name"]
@@ -126,11 +155,8 @@ def main(usr_args):
 
     if args["eval_video_log"]:
         video_save_dir = save_dir
-        if args["data_type"].get("third_view", False):
-            video_size = "320x240"  # observer camera is hardcoded 320x240 (envs/camera/camera.py)
-        else:
-            camera_config = get_camera_config(args["camera"]["head_camera_type"])
-            video_size = str(camera_config["w"]) + "x" + str(camera_config["h"])
+        camera_config = get_camera_config(args["camera"]["head_camera_type"])
+        video_size = str(camera_config["w"]) + "x" + str(camera_config["h"])
         video_save_dir.mkdir(parents=True, exist_ok=True)
         args["eval_video_save_dir"] = video_save_dir
 
@@ -266,33 +292,15 @@ def eval_policy(task_name,
         TASK_ENV.set_instruction(instruction=instruction)  # set language instruction
 
         if TASK_ENV.eval_video_path is not None:
-            ffmpeg = subprocess.Popen(
-                [
-                    "ffmpeg",
-                    "-y",
-                    "-loglevel",
-                    "error",
-                    "-f",
-                    "rawvideo",
-                    "-pixel_format",
-                    "rgb24",
-                    "-video_size",
-                    video_size,
-                    "-framerate",
-                    "10",
-                    "-i",
-                    "-",
-                    "-pix_fmt",
-                    "yuv420p",
-                    "-vcodec",
-                    "libx264",
-                    "-crf",
-                    "23",
-                    f"{TASK_ENV.eval_video_path}/episode{TASK_ENV.test_num}.mp4",
-                ],
-                stdin=subprocess.PIPE,
-            )
-            TASK_ENV._set_eval_video_ffmpeg(ffmpeg)
+            ffmpeg, ffmpeg_third = None, None
+            if args["camera"].get("collect_head_camera", True):
+                ffmpeg = _create_video_ffmpeg(video_size,
+                                              f"{TASK_ENV.eval_video_path}/episode{TASK_ENV.test_num}.mp4")
+            if args["data_type"].get("third_view", False):
+                # observer camera is hardcoded 320x240 (envs/camera/camera.py)
+                ffmpeg_third = _create_video_ffmpeg("320x240",
+                                                    f"{TASK_ENV.eval_video_path}/episode{TASK_ENV.test_num}_third_view.mp4")
+            TASK_ENV._set_eval_video_ffmpeg(ffmpeg, ffmpeg_third)
 
         succ = False
         reset_func(model)
