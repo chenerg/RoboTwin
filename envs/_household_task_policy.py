@@ -125,6 +125,9 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
     object_a_place_dis = 0.02
     object_a_place_constrain = "auto"
     object_a_target_quaternion = None
+    # Where object B waits while A crosses the table.  Subclasses may move
+    # it (e.g. swap_mouse_and_stapler uses a more central slot).
+    staging_xy = (0.285, -0.14)
 
     def load_actors(self):
         pose_a = _pose(-0.22, 0.03)
@@ -157,7 +160,7 @@ class SwapHouseholdObjectsPolicy(HouseholdPolicy):
         # Move B out of its destination before relaying A.  The slot remains
         # completely inside the right arm workspace.
         self.staging_pose = sapien.Pose(
-            [0.285, -0.14, b_pose.p[2]], b_pose.q
+            [self.staging_xy[0], self.staging_xy[1], b_pose.p[2]], b_pose.q
         )
 
         # Relay on the bare table instead of introducing an extra collision
